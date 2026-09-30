@@ -34,7 +34,8 @@ class StudentController extends Controller
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when($filters['q'] ?? null, fn ($query, $search) => $query->where(fn ($query) => $query
                 ->where('name', 'like', "%{$search}%")
-                ->orWhere('username', 'like', "%{$search}%")))
+                ->orWhere('username', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")))
             ->latest()
             ->paginate(20)
             ->withQueryString()
@@ -79,6 +80,7 @@ class StudentController extends Controller
                 'no_hp' => $student->no_hp,
                 'jenjang' => $student->jenjang?->label(),
                 'jenjang_kode' => $student->jenjang?->value,
+                'legacy_id' => $student->legacy_id,
                 'status' => $student->status->value,
                 'status_label' => $student->status->label(),
                 'catatan_admin' => $student->catatan_admin,

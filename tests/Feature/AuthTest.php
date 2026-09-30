@@ -89,7 +89,7 @@ class AuthTest extends TestCase
 
         $this->from('/login')->post('/login', ['username' => 'siti', 'password' => 'salah'])
             ->assertRedirect('/login')
-            ->assertSessionHasErrors(['username' => 'Username atau kata sandi salah.']);
+            ->assertSessionHasErrors(['username' => 'Username/email atau kata sandi salah.']);
 
         $this->assertGuest();
     }

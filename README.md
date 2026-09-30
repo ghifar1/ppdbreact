@@ -42,6 +42,39 @@ The theme (deep green and gold, with uniform colors per level: MI red, MTs navy,
 
 Uploaded files are stored privately in `storage/app/private/ppdb` and are only served to the owning student and admins.
 
+### Importing data from ppdb2020
+
+`php artisan ppdb:import-2020` copies registrations from the old [ppdb2020](https://github.com/ghifar1/ppdb2020) app. It only reads the old database; nothing there is changed.
+
+1. Point the `ppdb2020` connection at the old database in `.env` (`PPDB2020_DB_HOST`, `PPDB2020_DB_DATABASE`, `PPDB2020_DB_USERNAME`, `PPDB2020_DB_PASSWORD`).
+2. Make the old `storage/app/public` folder (with `documents/` and `profils/`) readable on this server.
+3. Run `php artisan migrate`, then a dry run to see what would happen:
+
+```bash
+php artisan ppdb:import-2020 --files=/path/to/ppdb2020/storage/app/public --dry-run
+php artisan ppdb:import-2020 --files=/path/to/ppdb2020/storage/app/public
+```
+
+| Option | |
+| --- | --- |
+| `--files=` | ppdb2020's `storage/app/public` folder. Without it, documents are not copied. |
+| `--jenjang=ma` | Level the students are imported into (ppdb2020 was MA only). |
+| `--year=2024` | Only import students who registered that year; repeat for more years. The dry run lists students per year. |
+| `--admins` | Also import admin accounts. |
+| `--update` | Refresh students imported earlier (status, answers, documents). Usernames and passwords are never changed. |
+| `--dry-run` | Report only; nothing is saved. |
+
+What is carried over:
+
+- **Accounts**: name, phone and the old password, so students log in as before. Email logins can use their email (the login page accepts a username or an email); plain-username logins keep their username unless it is taken. Accounts created with Google Sign-In had no password and need a reset from **Data Siswa**. A CSV with each account's new login and a note is written to `storage/app/private/ppdb-import/`.
+- **Form data**: every `biodatas` column, in menus that mirror the old forms (Data Pribadi, Data Orang Tua, Data Wali, Data Sekolah, Prestasi, Dokumen). Existing fields with the same meaning are reused, missing ones are created. Birth dates typed as `dd/mm/yyyy` become dates; values not in a dropdown's choices are added as choices and listed in the report.
+- **Documents**: KK, akta, rapor, SKL and the profile photo, copied into private storage.
+- **Status**: waiting → Menunggu Verifikasi, rejected (with the committee's comment) → Perlu Perbaikan, accepted → Terverifikasi, and the selection result → Lulus / Tidak Lulus. The old exam number becomes the registration number (e.g. `MA-2024-007`).
+
+Not imported: payments (`pembayarans`), registration waves, logs, settings, and the e-learning exam accounts.
+
+The import runs in a single transaction, so an error leaves nothing half-imported. Running it again skips students it already imported.
+
 ---
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>

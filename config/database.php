@@ -64,6 +64,24 @@ return [
             ]) : [],
         ],
 
+        // The old ppdb2020 database, read by `php artisan ppdb:import-2020`.
+        'ppdb2020' => [
+            'driver' => env('PPDB2020_DB_CONNECTION', 'mysql'),
+            'url' => env('PPDB2020_DB_URL'),
+            'host' => env('PPDB2020_DB_HOST', '127.0.0.1'),
+            'port' => env('PPDB2020_DB_PORT', '3306'),
+            'database' => env('PPDB2020_DB_DATABASE', 'ppdb2020'),
+            'username' => env('PPDB2020_DB_USERNAME', 'root'),
+            'password' => env('PPDB2020_DB_PASSWORD', ''),
+            'unix_socket' => env('PPDB2020_DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'engine' => null,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

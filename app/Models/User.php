@@ -65,10 +65,11 @@ class User extends Authenticatable
 
     /**
      * Registration number printed on the exam card, e.g. MTS-2026-00012.
+     * Students imported from ppdb2020 keep the number they had there.
      */
     public function nomorPendaftaran(): string
     {
-        return sprintf(
+        return $this->nomor_pendaftaran ?? sprintf(
             '%s-%s-%05d',
             strtoupper($this->jenjang?->value ?? 'X'),
             $this->created_at?->format('Y') ?? date('Y'),

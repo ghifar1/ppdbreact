@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\Rule;
 
-#[Fillable(['label', 'type', 'options', 'is_required', 'placeholder', 'help_text', 'sort_order'])]
+#[Fillable(['key', 'label', 'type', 'options', 'is_required', 'placeholder', 'help_text', 'sort_order'])]
 class FormField extends Model
 {
     /**

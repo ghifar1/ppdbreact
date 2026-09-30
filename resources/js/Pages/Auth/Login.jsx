@@ -29,12 +29,13 @@ const Login = ()=>{
             <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">Selamat datang kembali</p>
             <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight">Masuk ke akun PPDB</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-                Gunakan username dan password yang kamu buat saat mendaftar.
+                Gunakan username dan password yang kamu buat saat mendaftar. Akun dari PPDB tahun lalu bisa masuk
+                dengan email atau username lamanya.
             </p>
 
             <form className="mt-8 grid gap-5" onSubmit={submit}>
                 <div className="grid gap-2">
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="username">Username atau email</Label>
                     <Input id="username" type="text" autoComplete="username" autoFocus className="h-11"
                            value={form.data.username}
                            aria-invalid={form.errors.username ? true : undefined}

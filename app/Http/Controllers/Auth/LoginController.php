@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class LoginController extends Controller
@@ -43,6 +44,18 @@ class LoginController extends Controller
     public function username()
     {
         return 'username';
+    }
+
+    /**
+     * The login field takes a username or an email address. Students imported
+     * from ppdb2020 signed in there with their email.
+     */
+    protected function credentials(Request $request): array
+    {
+        $login = (string) $request->input($this->username());
+        $field = str_contains($login, '@') ? 'email' : 'username';
+
+        return [$field => $login, 'password' => $request->input('password')];
     }
 
     /**

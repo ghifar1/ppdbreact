@@ -140,6 +140,9 @@ const Show = ({student, menus, statusOptions})=>{
                             <div><dt className="text-muted-foreground">Mendaftar</dt><dd className="font-medium">{student.registered_at}</dd></div>
                             <div><dt className="text-muted-foreground">Diajukan</dt><dd className="font-medium">{student.finalized_at || 'Belum diajukan'}</dd></div>
                             <div><dt className="text-muted-foreground">Formulir lengkap</dt><dd className="font-medium">{complete} dari {menus.length}</dd></div>
+                            {student.legacy_id && (
+                                <div><dt className="text-muted-foreground">Asal data</dt><dd className="font-medium">PPDB lama (ID {student.legacy_id})</dd></div>
+                            )}
                         </dl>
                     </section>
 

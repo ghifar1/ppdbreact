@@ -1,7 +1,8 @@
 import React from "react";
-import {useForm} from "@inertiajs/react";
-import {CircleCheckIcon, FileIcon, KeyRoundIcon, ShieldCheckIcon} from "lucide-react";
+import {router, useForm} from "@inertiajs/react";
+import {CircleCheckIcon, FileIcon, KeyRoundIcon, MonitorCheckIcon, RefreshCwIcon, ShieldCheckIcon} from "lucide-react";
 import AdminNav from "../../../Layouts/AdminNav";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import FieldError from "@/components/FieldError";
 import JenjangBadge from "@/components/JenjangBadge";
 import PageHeader from "@/components/PageHeader";
@@ -74,6 +75,43 @@ const StatusForm = ({student, statusOptions})=>{
     )
 }
 
+const ExamAccountCard = ({student})=>{
+
+    const hasAccount = !!student.exam_username
+    const submit = () => router.post(`/admin/siswa/${student.id}/akun-ujian`, {}, {preserveScroll: true})
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-serif text-lg"><MonitorCheckIcon className="size-5 text-primary"/> Akun ujian</CardTitle>
+                <CardDescription>Login sistem ujian (e-learning/CBT), tercetak di kartu ujian siswa.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+                {!student.exam_eligible && !hasAccount ? (
+                    <p className="text-sm text-muted-foreground">Dibuat otomatis saat status siswa diubah menjadi Terverifikasi.</p>
+                ) : hasAccount ? (
+                    <dl className="grid gap-2 rounded-lg border bg-muted/40 p-3 text-sm">
+                        <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Username</dt><dd className="font-mono font-semibold">{student.exam_username}</dd></div>
+                        <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Password</dt><dd className="font-mono font-semibold tracking-wider">{student.exam_password}</dd></div>
+                    </dl>
+                ) : (
+                    <p className="text-sm text-muted-foreground">Belum ada akun ujian.</p>
+                )}
+                {student.exam_eligible && (
+                    <ConfirmDialog
+                        title={hasAccount ? 'Ganti password ujian?' : 'Buat akun ujian?'}
+                        description={hasAccount ? 'Password lama tidak bisa dipakai lagi. Minta siswa mencetak ulang kartu ujian.' : 'Username memakai NISN siswa jika ada.'}
+                        confirmLabel={hasAccount ? 'Ganti password' : 'Buat akun'}
+                        onConfirm={submit}
+                    >
+                        <Button variant="outline" className="w-full"><RefreshCwIcon/> {hasAccount ? 'Buat password baru' : 'Buat akun ujian'}</Button>
+                    </ConfirmDialog>
+                )}
+            </CardContent>
+        </Card>
+    )
+}
+
 const PasswordForm = ({student})=>{
 
     const form = useForm({password: '', password_confirmation: ''})
@@ -140,6 +178,7 @@ const Show = ({student, menus, statusOptions})=>{
                             <div><dt className="text-muted-foreground">Mendaftar</dt><dd className="font-medium">{student.registered_at}</dd></div>
                             <div><dt className="text-muted-foreground">Diajukan</dt><dd className="font-medium">{student.finalized_at || 'Belum diajukan'}</dd></div>
                             <div><dt className="text-muted-foreground">Formulir lengkap</dt><dd className="font-medium">{complete} dari {menus.length}</dd></div>
+                            <div><dt className="text-muted-foreground">Gelombang</dt><dd className="font-medium">{student.gelombang || '-'}</dd></div>
                             {student.legacy_id && (
                                 <div><dt className="text-muted-foreground">Asal data</dt><dd className="font-medium">PPDB lama (ID {student.legacy_id})</dd></div>
                             )}
@@ -184,6 +223,7 @@ const Show = ({student, menus, statusOptions})=>{
 
                 <div className="grid content-start gap-6 lg:sticky lg:top-22">
                     <StatusForm key={`${student.id}-${student.status}`} student={student} statusOptions={statusOptions}/>
+                    <ExamAccountCard student={student}/>
                     <PasswordForm student={student}/>
                 </div>
             </div>

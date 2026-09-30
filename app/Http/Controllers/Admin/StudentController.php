@@ -8,7 +8,9 @@ use App\Enums\StatusPendaftaran;
 use App\Http\Controllers\Controller;
 use App\Models\FormField;
 use App\Models\Menu;
+use App\Models\RegistrationPeriod;
 use App\Models\User;
+use App\Services\ExamAccounts;
 use App\Services\FormService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +20,7 @@ use Inertia\Response;
 
 class StudentController extends Controller
 {
-    public function __construct(private FormService $forms) {}
+    public function __construct(private FormService $forms, private ExamAccounts $examAccounts) {}
 
     public function index(Request $request): Response
     {
@@ -26,12 +28,14 @@ class StudentController extends Controller
             'jenjang' => ['nullable', Rule::enum(Jenjang::class)],
             'status' => ['nullable', Rule::enum(StatusPendaftaran::class)],
             'q' => ['nullable', 'string', 'max:100'],
+            'gelombang' => ['nullable', 'integer'],
         ]);
 
         $students = User::query()
             ->where('role', User::ROLE_STUDENT)
             ->when($filters['jenjang'] ?? null, fn ($query, $jenjang) => $query->where('jenjang', $jenjang))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($filters['gelombang'] ?? null, fn ($query, $period) => $query->where('registration_period_id', $period))
             ->when($filters['q'] ?? null, fn ($query, $search) => $query->where(fn ($query) => $query
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('username', 'like', "%{$search}%")
@@ -56,9 +60,14 @@ class StudentController extends Controller
                 'jenjang' => $filters['jenjang'] ?? '',
                 'status' => $filters['status'] ?? '',
                 'q' => $filters['q'] ?? '',
+                'gelombang' => (string) ($filters['gelombang'] ?? ''),
             ],
             'jenjangOptions' => Jenjang::options(),
             'statusOptions' => StatusPendaftaran::options(),
+            'periodOptions' => RegistrationPeriod::orderByDesc('opens_at')->get()->map(fn (RegistrationPeriod $period) => [
+                'value' => (string) $period->id,
+                'label' => $period->name.' · '.($period->jenjang?->shortLabel() ?? 'Semua jenjang'),
+            ]),
         ]);
     }
 
@@ -81,6 +90,10 @@ class StudentController extends Controller
                 'jenjang' => $student->jenjang?->label(),
                 'jenjang_kode' => $student->jenjang?->value,
                 'legacy_id' => $student->legacy_id,
+                'gelombang' => $student->registrationPeriod?->name,
+                'exam_username' => $student->exam_username,
+                'exam_password' => $student->exam_password,
+                'exam_eligible' => $student->status->hasExamCard(),
                 'status' => $student->status->value,
                 'status_label' => $student->status->label(),
                 'catatan_admin' => $student->catatan_admin,
@@ -121,6 +134,10 @@ class StudentController extends Controller
             'status' => $data['status'],
             'catatan_admin' => $data['catatan_admin'] ?? null,
         ])->save();
+
+        if ($student->status->hasExamCard()) {
+            $this->examAccounts->ensure($student);
+        }
 
         return back()->with('success', "Status {$student->name} diubah menjadi {$student->status->label()}.");
     }

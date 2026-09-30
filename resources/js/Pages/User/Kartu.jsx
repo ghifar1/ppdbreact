@@ -51,7 +51,7 @@ const Kartu = ({kartu})=>{
                     <dl className="text-sm">
                         <Row label="No. Pendaftaran" mono>{kartu.nomor_pendaftaran}</Row>
                         <Row label="Nama">{kartu.nama}</Row>
-                        <Row label="Username">{kartu.username}</Row>
+                        {kartu.gelombang && <Row label="Gelombang">{kartu.gelombang}</Row>}
                         <Row label="Jenjang">
                             <span className={cn("inline-flex items-center gap-2", style.text)}>
                                 <span className={cn("size-2.5 rounded-full print:[print-color-adjust:exact]", style.bar)}/>
@@ -63,6 +63,17 @@ const Kartu = ({kartu})=>{
                         Pas foto<br/>3 × 4
                     </div>
                 </div>
+
+                {kartu.exam_username && (
+                    <div className="mx-6 mb-6 rounded-lg border-2 border-dashed border-[#0f5a41]/40 bg-[#0f5a41]/5 px-4 py-3 print:[print-color-adjust:exact]">
+                        <p className="text-xs font-semibold tracking-[0.2em] text-[#0f5a41] uppercase">Akun Ujian (E-Learning)</p>
+                        <dl className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
+                            <div className="flex gap-2"><dt className="text-stone-500">Username:</dt><dd className="font-mono font-semibold text-stone-900">{kartu.exam_username}</dd></div>
+                            <div className="flex gap-2"><dt className="text-stone-500">Password:</dt><dd className="font-mono font-semibold tracking-wider text-stone-900">{kartu.exam_password}</dd></div>
+                        </dl>
+                        <p className="mt-1 text-xs text-stone-500">Jaga kerahasiaan akun ini. Gunakan untuk masuk ke sistem ujian.</p>
+                    </div>
+                )}
 
                 <footer className="grid gap-6 border-t border-stone-200 px-6 py-5 text-xs sm:grid-cols-2">
                     <ul className="grid list-disc content-start gap-1 pl-4 text-stone-600">

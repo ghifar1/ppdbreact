@@ -122,6 +122,29 @@ const Footer = ()=>{
     )
 }
 
+/** One line about registration for the top bar, from the page's `pendaftaran` prop. */
+const RegistrationNotice = ()=>{
+
+    const {sekolah, pendaftaran} = usePage().props
+    const open = pendaftaran?.periods?.find(period => period.status === 'open')
+    const next = pendaftaran?.periods?.find(period => period.status === 'upcoming')
+
+    if (open) {
+        return <p><span className="font-semibold text-gold">Pendaftaran dibuka</span><span className="text-brand-foreground/80"> · {open.name} s.d. {open.closes_label}</span></p>
+    }
+
+    if (next) {
+        return <p><span className="font-semibold text-gold">{next.name}</span><span className="text-brand-foreground/80"> dibuka {next.opens_label}</span></p>
+    }
+
+    return (
+        <p>
+            <span className="font-semibold text-gold">Penerimaan Peserta Didik Baru</span>
+            <span className="text-brand-foreground/80"> · Tahun Ajaran {sekolah.tahun}</span>
+        </p>
+    )
+}
+
 const PublicLayout = ({children})=>{
 
     const {sekolah} = usePage().props
@@ -130,10 +153,7 @@ const PublicLayout = ({children})=>{
         <div className="flex min-h-screen flex-col bg-background">
             <div className="bg-brand text-brand-foreground">
                 <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2 text-xs sm:px-6 lg:px-8">
-                    <p>
-                        <span className="font-semibold text-gold">Penerimaan Peserta Didik Baru</span>
-                        <span className="text-brand-foreground/80"> · Tahun Ajaran {sekolah.tahun}</span>
-                    </p>
+                    <RegistrationNotice/>
                     {sekolah.telepon && (
                         <p className="hidden items-center gap-1.5 text-brand-foreground/80 sm:flex">
                             <PhoneIcon className="size-3.5"/> {sekolah.telepon}

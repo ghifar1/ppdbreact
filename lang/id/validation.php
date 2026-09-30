@@ -16,6 +16,7 @@ return [
     'array' => ':attribute harus berupa daftar pilihan.',
     'confirmed' => 'Konfirmasi :attribute tidak cocok.',
     'date' => ':attribute bukan tanggal yang valid.',
+    'after' => ':attribute harus setelah :date.',
     'email' => ':attribute harus berupa alamat email yang valid.',
     'enum' => ':attribute yang dipilih tidak valid.',
     'file' => ':attribute harus berupa berkas.',
@@ -54,6 +55,9 @@ return [
         'title' => 'judul',
         'catatan_admin' => 'catatan',
         'status' => 'status',
+        'opens_at' => 'waktu dibuka',
+        'closes_at' => 'waktu ditutup',
+        'description' => 'keterangan',
     ],
 
 ];

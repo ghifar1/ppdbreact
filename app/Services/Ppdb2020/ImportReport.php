@@ -25,6 +25,11 @@ final class ImportReport
 
     public int $filesSkipped = 0;
 
+    public int $examAccounts = 0;
+
+    /** @var list<string> */
+    public array $periodsCreated = [];
+
     /** @var array<string, int> legacy year => students seen */
     public array $years = [];
 

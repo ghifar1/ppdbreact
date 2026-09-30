@@ -9,12 +9,13 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'username', 'email', 'password', 'jenjang', 'no_hp'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'exam_password'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -47,6 +48,7 @@ class User extends Authenticatable
             'jenjang' => Jenjang::class,
             'status' => StatusPendaftaran::class,
             'finalized_at' => 'datetime',
+            'exam_password' => 'encrypted',
         ];
     }
 
@@ -83,5 +85,13 @@ class User extends Authenticatable
     public function answers(): HasMany
     {
         return $this->hasMany(FormAnswer::class);
+    }
+
+    /**
+     * @return BelongsTo<RegistrationPeriod, $this>
+     */
+    public function registrationPeriod(): BelongsTo
+    {
+        return $this->belongsTo(RegistrationPeriod::class);
     }
 }

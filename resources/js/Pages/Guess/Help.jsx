@@ -4,6 +4,7 @@ import {CalendarDaysIcon, CircleHelpIcon, FileTextIcon, LifeBuoyIcon} from "luci
 import PublicLayout from "../../Layouts/PublicLayout";
 import ArchDivider from "@/components/ArchDivider";
 import Pattern from "@/components/Pattern";
+import PeriodList from "@/components/PeriodList";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "@/components/ui/accordion";
 import {Button} from "@/components/ui/button";
 import {jadwalItems, steps} from "@/lib/ppdb";
@@ -49,7 +50,7 @@ const faqs = [
         'Setelah panitia memverifikasi datamu. Status di dashboard akan berubah menjadi "Terverifikasi" dan tombol kartu ujian akan muncul.'],
 ]
 
-const Help = ({jadwal})=>{
+const Help = ({jadwal, pendaftaran})=>{
 
     const {sekolah} = usePage().props
 
@@ -106,6 +107,12 @@ const Help = ({jadwal})=>{
                 </div>
 
                 <aside className="grid content-start gap-6 lg:sticky lg:top-24">
+                    {pendaftaran?.periods?.length > 0 && (
+                        <div className="grid gap-3">
+                            <h2 className="font-serif text-xl font-semibold">Gelombang pendaftaran</h2>
+                            <PeriodList periods={pendaftaran.periods} compact/>
+                        </div>
+                    )}
                     <div className="rounded-2xl border bg-card p-6 shadow-xs">
                         <h2 className="flex items-center gap-2 font-serif text-xl font-semibold">
                             <CalendarDaysIcon className="size-5 text-primary"/> Jadwal

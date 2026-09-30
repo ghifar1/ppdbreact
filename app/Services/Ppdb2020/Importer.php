@@ -8,7 +8,10 @@ use App\Enums\StatusPendaftaran;
 use App\Models\FormAnswer;
 use App\Models\FormField;
 use App\Models\Menu;
+use App\Models\RegistrationPeriod;
 use App\Models\User;
+use App\Services\RegistrationSchedule;
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Collection;
@@ -27,7 +30,8 @@ use Throwable;
  * student (`students` is a copy made when the committee accepted the data),
  * `documents`/`photo_profils` with file names under storage/app/public,
  * `submissions` for the review status and `no_registration_v2_s` (or the
- * older `no_registrations`) for the exam number and the selection result.
+ * older `no_registrations`) for the exam number, the exam (e-learning) login
+ * and the selection result. `regist_sessions` holds the registration periods.
  *
  * Everything runs in one transaction: a failure or a dry run leaves the
  * ppdbreact database and storage as they were.
@@ -43,6 +47,9 @@ final class Importer
 
     /** @var array<string, bool> */
     private array $tables = [];
+
+    /** @var Collection<int, RegistrationPeriod> */
+    private Collection $periods;
 
     /** @var list<string> files written during this run, removed again on rollback */
     private array $written = [];
@@ -64,11 +71,12 @@ final class Importer
     ) {
         $this->report = new ImportReport;
         $this->fields = new Collection;
+        $this->periods = new Collection;
     }
 
     public function run(): ImportReport
     {
-        foreach (['users', 'biodatas', 'students', 'documents', 'photo_profils', 'submissions', 'no_registration_v2_s', 'no_registrations'] as $table) {
+        foreach (['users', 'biodatas', 'students', 'documents', 'photo_profils', 'submissions', 'no_registration_v2_s', 'no_registrations', 'regist_sessions'] as $table) {
             $this->tables[$table] = $this->legacy->getSchemaBuilder()->hasTable($table);
         }
 
@@ -86,6 +94,7 @@ final class Importer
 
         try {
             $this->prepareFields();
+            $this->importPeriods();
             $this->legacy->table('users')->chunkById(self::CHUNK, fn (Collection $rows) => $this->importChunk($rows));
         } catch (Throwable $e) {
             DB::rollBack();
@@ -189,6 +198,60 @@ final class Importer
     }
 
     /**
+     * ppdb2020's registration waves become registration periods of the target
+     * jenjang, so imported students can be linked to the wave they joined.
+     */
+    private function importPeriods(): void
+    {
+        if (! $this->tables['regist_sessions']) {
+            return;
+        }
+
+        foreach ($this->legacy->table('regist_sessions')->orderBy('open')->get() as $row) {
+            $opens = $this->timestamp(data_get($row, 'open'));
+            $closes = $this->timestamp(data_get($row, 'close'));
+
+            if ($opens === null || $closes === null) {
+                $this->report->warn("Registration period \"{$row->regist_name}\" has no open/close time; skipped.");
+
+                continue;
+            }
+
+            $name = trim((string) data_get($row, 'regist_name')) ?: 'Gelombang';
+            $year = trim((string) data_get($row, 'year'));
+            if ($year !== '' && ! str_contains($name, $year)) {
+                $name .= " {$year}";
+            }
+
+            $period = RegistrationPeriod::firstOrCreate(
+                ['jenjang' => $this->jenjang, 'opens_at' => $opens, 'closes_at' => $closes],
+                ['name' => Str::limit($name, 100, '')],
+            );
+
+            if ($period->wasRecentlyCreated) {
+                $this->report->periodsCreated[] = "{$period->name} ({$period->present()['range_label']})";
+            }
+
+            $this->periods->push($period);
+        }
+
+        if ($this->report->periodsCreated && ! (new RegistrationSchedule)->for($this->jenjang)['open']) {
+            $this->report->warn("Registration for {$this->jenjang->label()} is now closed because none of its periods is open. Add a new period under Gelombang Pendaftaran to open it.");
+        }
+    }
+
+    private function periodFor(?string $registeredAt): ?RegistrationPeriod
+    {
+        if ($registeredAt === null) {
+            return null;
+        }
+
+        $at = CarbonImmutable::parse($registeredAt);
+
+        return $this->periods->first(fn (RegistrationPeriod $period) => $at->betweenIncluded($period->opens_at, $period->closes_at));
+    }
+
+    /**
      * @param  Collection<int, object>  $rows
      */
     private function importChunk(Collection $rows): void
@@ -287,7 +350,10 @@ final class Importer
         ]);
 
         if (! $isAdmin) {
-            $this->applyStatus($user, $related['submissions']->get($row->id), $related['noreg']->get($row->id), $related['noregV1']->get($row->id), $row);
+            $noreg = $related['noreg']->get($row->id) ?? $related['noregV1']->get($row->id);
+            $this->applyStatus($user, $related['submissions']->get($row->id), $noreg, $row);
+            $this->applyExamAccount($user, $noreg);
+            $user->registration_period_id = $this->periodFor($this->timestamp(data_get($row, 'created_at')))?->id;
         }
 
         $user->save();
@@ -383,9 +449,8 @@ final class Importer
         return $username;
     }
 
-    private function applyStatus(User $user, ?object $submission, ?object $noreg, ?object $noregV1, object $row): void
+    private function applyStatus(User $user, ?object $submission, ?object $noreg, object $row): void
     {
-        $noreg ??= $noregV1;
         $result = Str::lower((string) data_get($noreg, 'is_lulus'));
         $review = Str::lower((string) data_get($submission, 'status'));
 
@@ -414,6 +479,33 @@ final class Importer
                 ? sprintf('%s-%s-%03d', strtoupper($this->jenjang->value), $year, (int) $number)
                 : null,
         ]);
+    }
+
+    /**
+     * The e-learning login ppdb2020 printed on the exam card (NISN and the
+     * registration code). Accounts already set in ppdbreact are kept.
+     */
+    private function applyExamAccount(User $user, ?object $noreg): void
+    {
+        $username = trim((string) data_get($noreg, 'username_ujian'));
+        $password = trim((string) data_get($noreg, 'password_ujian'));
+
+        if ($user->exam_username !== null || $username === '' || $password === '') {
+            return;
+        }
+
+        $taken = User::where('exam_username', $username)
+            ->when($user->exists, fn ($query) => $query->whereKeyNot($user->id))
+            ->exists();
+
+        if ($taken) {
+            $this->report->warn("{$user->name}: exam username \"{$username}\" is already used by another student; a new one is made when the exam card is opened.");
+
+            return;
+        }
+
+        $user->forceFill(['exam_username' => Str::limit($username, 50, ''), 'exam_password' => $password]);
+        $this->report->examAccounts++;
     }
 
     private function importAnswers(User $user, ?object $data): void

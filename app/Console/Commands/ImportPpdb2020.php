@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use App\Enums\Jenjang;
 use App\Enums\StatusPendaftaran;
-use App\Services\Ppdb2020\ImportReport;
 use App\Services\Ppdb2020\Importer;
+use App\Services\Ppdb2020\ImportReport;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -100,6 +100,7 @@ class ImportPpdb2020 extends Command
             ['Admin accounts (skipped, use --admins)', $report->skippedAdmins],
             ['Accounts that could not be imported', count($report->conflicts)],
             ['Answers', $report->answers],
+            ['Exam (e-learning) accounts', $report->examAccounts],
             ['Files copied', $report->filesCopied],
             ['Files not found', $report->filesMissing],
             ['Files skipped (no --files given)', $report->filesSkipped],
@@ -114,6 +115,10 @@ class ImportPpdb2020 extends Command
         if ($report->statuses) {
             $this->line('Imported students per status: '.collect($report->statuses)
                 ->map(fn (int $count, string $status) => StatusPendaftaran::from($status)->label().": {$count}")->implode(', '));
+        }
+
+        if ($report->periodsCreated) {
+            $this->line('Registration periods created: '.implode(', ', $report->periodsCreated));
         }
 
         if ($report->menusCreated) {

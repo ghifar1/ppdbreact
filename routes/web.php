@@ -42,6 +42,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/isian/{field}', [Admin\FieldController::class, 'destroy'])->name('fields.destroy');
     Route::post('/isian/{field}/move', [Admin\FieldController::class, 'move'])->name('fields.move');
 
+    Route::get('/gelombang', [Admin\RegistrationPeriodController::class, 'index'])->name('periods.index');
+    Route::post('/gelombang', [Admin\RegistrationPeriodController::class, 'store'])->name('periods.store');
+    Route::put('/gelombang/{period}', [Admin\RegistrationPeriodController::class, 'update'])->name('periods.update');
+    Route::delete('/gelombang/{period}', [Admin\RegistrationPeriodController::class, 'destroy'])->name('periods.destroy');
+
+    Route::get('/akun-ujian', [Admin\ExamAccountController::class, 'index'])->name('exam.index');
+    Route::post('/akun-ujian', [Admin\ExamAccountController::class, 'generate'])->name('exam.generate');
+    Route::get('/akun-ujian/unduh', [Admin\ExamAccountController::class, 'export'])->name('exam.export');
+    Route::post('/siswa/{student}/akun-ujian', [Admin\ExamAccountController::class, 'reset'])->name('exam.reset');
+
     Route::get('/siswa', [Admin\StudentController::class, 'index'])->name('students.index');
     Route::get('/siswa/{student}', [Admin\StudentController::class, 'show'])->name('students.show');
     Route::post('/siswa/{student}/status', [Admin\StudentController::class, 'updateStatus'])->name('students.status');

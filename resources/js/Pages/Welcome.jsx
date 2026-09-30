@@ -1,8 +1,9 @@
 import React from "react";
 import {Head, Link, usePage} from "@inertiajs/react";
-import {ArrowRightIcon, BadgeCheckIcon, CalendarDaysIcon, GraduationCapIcon} from "lucide-react";
+import {ArrowRightIcon, BadgeCheckIcon, CalendarDaysIcon, CalendarRangeIcon, GraduationCapIcon} from "lucide-react";
 import PublicLayout from "../Layouts/PublicLayout";
 import ArchDivider from "@/components/ArchDivider";
+import PeriodList from "@/components/PeriodList";
 import Pattern from "@/components/Pattern";
 import {Crest} from "@/components/SchoolLogo";
 import {Button} from "@/components/ui/button";
@@ -59,7 +60,44 @@ const HeroCard = ({sekolah})=>(
     </div>
 )
 
-const Hero = ()=>{
+/** Registration status under the hero text. */
+const HeroStatus = ({pendaftaran})=>{
+
+    const open = pendaftaran?.periods?.find(period => period.status === 'open')
+    const next = pendaftaran?.periods?.find(period => period.status === 'upcoming')
+
+    if (open) {
+        return (
+            <p className="mt-6 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-white/10 px-4 py-2 text-sm ring-1 ring-white/15">
+                <span className="size-2 animate-pulse rounded-full bg-emerald-400"/>
+                <b className="text-white">{open.name} dibuka</b>
+                <span className="text-brand-foreground/80">· {open.relative.toLowerCase()}</span>
+            </p>
+        )
+    }
+
+    if (next) {
+        return (
+            <p className="mt-6 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-white/10 px-4 py-2 text-sm ring-1 ring-white/15">
+                <CalendarRangeIcon className="size-4 text-gold"/>
+                <b className="text-white">{next.name}</b>
+                <span className="text-brand-foreground/80">dibuka {next.opens_label}</span>
+            </p>
+        )
+    }
+
+    if (pendaftaran?.restricted && !Object.values(pendaftaran.jenjang).some(status => status.open)) {
+        return (
+            <p className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm text-brand-foreground/90 ring-1 ring-white/15">
+                Pendaftaran sudah ditutup. Nantikan gelombang berikutnya.
+            </p>
+        )
+    }
+
+    return null
+}
+
+const Hero = ({pendaftaran})=>{
 
     const {sekolah} = usePage().props
 
@@ -81,6 +119,7 @@ const Hero = ()=>{
                         {sekolah.nama} membuka pendaftaran untuk jenjang MI, MTs, dan MA. Daftar dari rumah,
                         lengkapi formulir secara online, dan pantau hasil seleksi dalam satu tempat.
                     </p>
+                    <HeroStatus pendaftaran={pendaftaran}/>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                         <Button asChild size="xl" variant="gold">
                             <Link href="/register">Daftar Sekarang <ArrowRightIcon/></Link>
@@ -106,7 +145,27 @@ const Hero = ()=>{
     )
 }
 
-const JenjangSection = ({jenjangOptions})=>(
+/** "Dibuka s.d. …" / "Dibuka …" / "Ditutup" for one jenjang, or nothing without periods. */
+const JenjangAvailability = ({status})=>{
+
+    if (!status?.restricted) {
+        return null
+    }
+
+    const [dot, text] = status.open
+        ? ['bg-emerald-500', `Dibuka s.d. ${status.current.closes_label}`]
+        : status.next
+            ? ['bg-sky-500', `${status.next.name} dibuka ${status.next.opens_label}`]
+            : ['bg-muted-foreground', 'Pendaftaran ditutup']
+
+    return (
+        <p className="mt-3 flex items-center gap-2 text-sm font-medium">
+            <span className={cn("size-2 shrink-0 rounded-full", dot)}/> {text}
+        </p>
+    )
+}
+
+const JenjangSection = ({jenjangOptions, pendaftaran})=>(
     <section id="jenjang" className="scroll-mt-20 py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <SectionHeading eyebrow="Pilih Jenjang" title="Tiga jenjang, satu pintu pendaftaran" center>
@@ -116,6 +175,8 @@ const JenjangSection = ({jenjangOptions})=>(
             <div className="mt-14 grid gap-6 md:grid-cols-3">
                 {jenjangOptions.map(option => {
                     const style = jenjangStyle(option.value)
+                    const status = pendaftaran?.jenjang?.[option.value]
+                    const canRegister = status?.open ?? true
 
                     return (
                         <article key={option.value}
@@ -128,6 +189,7 @@ const JenjangSection = ({jenjangOptions})=>(
                             <div className="flex flex-1 flex-col p-6">
                                 <h3 className="font-serif text-xl font-semibold">{option.label}</h3>
                                 <p className="mt-1 text-sm text-muted-foreground">{style.tagline}</p>
+                                <JenjangAvailability status={status}/>
                                 <ul className="mt-5 grid gap-2 text-sm">
                                     {['Formulir khusus jenjang ' + option.short, 'Unggah berkas pendukung', 'Kartu ujian & pengumuman online'].map(item => (
                                         <li key={item} className="flex items-center gap-2">
@@ -136,9 +198,13 @@ const JenjangSection = ({jenjangOptions})=>(
                                     ))}
                                 </ul>
                                 <div className="mt-6 grid grid-cols-2 gap-2 pt-2">
-                                    <Button asChild className={cn(style.solid, "hover:opacity-90")}>
-                                        <Link href={`/register?jenjang=${option.value}`}>Daftar {option.short}</Link>
-                                    </Button>
+                                    {canRegister ? (
+                                        <Button asChild className={cn(style.solid, "hover:opacity-90")}>
+                                            <Link href={`/register?jenjang=${option.value}`}>Daftar {option.short}</Link>
+                                        </Button>
+                                    ) : (
+                                        <Button disabled variant="secondary">{status?.next ? 'Belum dibuka' : 'Ditutup'}</Button>
+                                    )}
                                     <Button asChild variant="outline">
                                         <Link href="/login">Masuk</Link>
                                     </Button>
@@ -180,8 +246,16 @@ const AlurSection = ()=>(
     </section>
 )
 
-const JadwalSection = ({jadwal})=>(
+const JadwalSection = ({jadwal, periods})=>(
     <section id="jadwal" className="scroll-mt-20 py-20 sm:py-24">
+        {periods?.length > 0 && (
+            <div className="mx-auto mb-14 max-w-6xl px-4 sm:px-6 lg:px-8">
+                <SectionHeading eyebrow="Gelombang Pendaftaran" title="Daftar di gelombang yang sedang dibuka">
+                    Pendaftaran hanya bisa dilakukan selama gelombang untuk jenjangmu dibuka.
+                </SectionHeading>
+                <div className="mt-8"><PeriodList periods={periods}/></div>
+            </div>
+        )}
         <div className="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_1.3fr] lg:px-8">
             <div>
                 <SectionHeading eyebrow="Jadwal" title="Catat tanggal pentingnya">
@@ -241,13 +315,13 @@ const CtaSection = ()=>(
     </section>
 )
 
-const Welcome = ({jenjangOptions, jadwal})=>(
+const Welcome = ({jenjangOptions, jadwal, pendaftaran})=>(
     <>
         <Head title="Beranda"/>
-        <Hero/>
-        <JenjangSection jenjangOptions={jenjangOptions}/>
+        <Hero pendaftaran={pendaftaran}/>
+        <JenjangSection jenjangOptions={jenjangOptions} pendaftaran={pendaftaran}/>
         <AlurSection/>
-        <JadwalSection jadwal={jadwal}/>
+        <JadwalSection jadwal={jadwal} periods={pendaftaran?.periods}/>
         <CtaSection/>
     </>
 )

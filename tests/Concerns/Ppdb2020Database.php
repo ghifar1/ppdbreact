@@ -92,6 +92,15 @@ trait Ppdb2020Database
             $table->timestamps();
         });
 
+        $schema->create('regist_sessions', function (Blueprint $table) {
+            $table->id();
+            $table->string('regist_name');
+            $table->dateTime('open');
+            $table->dateTime('close');
+            $table->string('year', 50);
+            $table->timestamps();
+        });
+
         foreach (['no_registrations', 'no_registration_v2_s'] as $name) {
             $schema->create($name, function (Blueprint $table) use ($name) {
                 $table->id();

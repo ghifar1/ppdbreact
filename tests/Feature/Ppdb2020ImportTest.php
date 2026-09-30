@@ -7,6 +7,7 @@ use App\Enums\Jenjang;
 use App\Models\FormAnswer;
 use App\Models\FormField;
 use App\Models\Menu;
+use App\Models\RegistrationPeriod;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -344,6 +345,39 @@ class Ppdb2020ImportTest extends TestCase
         $admin = User::factory()->admin()->create();
         $this->actingAs($admin)->get("/admin/siswa/{$user->id}")->assertOk()
             ->assertInertia(fn (Assert $page) => $page->where('student.legacy_id', $id));
+    }
+
+    public function test_registration_waves_and_exam_logins_are_imported(): void
+    {
+        DB::connection('ppdb2020')->table('regist_sessions')->insert([
+            ['regist_name' => 'Gelombang 1', 'open' => '2024-02-01 00:00:00', 'close' => '2024-03-31 23:59:00', 'year' => '2024'],
+            ['regist_name' => 'Gelombang 2', 'open' => '2024-04-01 00:00:00', 'close' => '2024-05-31 23:59:00', 'year' => '2024'],
+        ]);
+        $early = $this->legacyUser(['email' => 'awal@example.com', 'created_at' => '2024-03-01 08:00:00']);
+        $late = $this->legacyUser(['email' => 'akhir@example.com', 'created_at' => '2024-04-20 08:00:00']);
+        $this->legacySubmission($early, 'success');
+        $this->legacyResult($early, 3, 'waiting');
+
+        $this->artisan('ppdb:import-2020')
+            ->expectsOutputToContain('Registration periods created: Gelombang 1 2024')
+            ->expectsOutputToContain('Registration for Madrasah Aliyah is now closed')
+            ->assertSuccessful();
+
+        $periods = RegistrationPeriod::orderBy('opens_at')->get();
+        $this->assertSame(['Gelombang 1 2024', 'Gelombang 2 2024'], $periods->pluck('name')->all());
+        $this->assertSame(Jenjang::MA, $periods[0]->jenjang);
+
+        $first = User::where('legacy_id', $early)->firstOrFail();
+        $this->assertSame($periods[0]->id, $first->registration_period_id);
+        $this->assertSame($periods[1]->id, User::where('legacy_id', $late)->value('registration_period_id'));
+
+        // The e-learning login printed on the old exam card.
+        $this->assertSame('0081234567', $first->exam_username);
+        $this->assertSame('KODE123456', $first->exam_password);
+
+        // Running again does not duplicate periods.
+        $this->artisan('ppdb:import-2020', ['--update' => true])->assertSuccessful();
+        $this->assertSame(2, RegistrationPeriod::count());
     }
 
     public function test_missing_connection_fails_cleanly(): void

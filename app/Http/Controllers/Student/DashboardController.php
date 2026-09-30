@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Enums\StatusPendaftaran;
 use App\Http\Controllers\Controller;
+use App\Services\ExamAccounts;
 use App\Services\FormService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,9 +30,13 @@ class DashboardController extends Controller
                 'status' => $user->status->value,
                 'status_label' => $user->status->label(),
                 'catatan_admin' => $user->catatan_admin,
+                'gelombang' => $user->registrationPeriod?->name,
             ],
             'dataLengkap' => $this->forms->isComplete($user),
-            'jadwal' => config('ppdb.jadwal'),
+            // The student's own registration period is more precise than the general schedule.
+            'jadwal' => array_merge(config('ppdb.jadwal'), array_filter([
+                'pengisian' => $user->registrationPeriod?->present()['range_label'],
+            ])),
         ]);
     }
 
@@ -55,13 +60,16 @@ class DashboardController extends Controller
         return back()->with('success', 'Data berhasil diajukan. Admin akan memeriksa datamu.');
     }
 
-    public function card(Request $request): Response|RedirectResponse
+    public function card(Request $request, ExamAccounts $examAccounts): Response|RedirectResponse
     {
         $user = $request->user();
 
         if (! $user->status->hasExamCard()) {
             return redirect()->route('dashboard')->with('error', 'Kartu ujian tersedia setelah data diverifikasi admin.');
         }
+
+        // Students verified before exam accounts existed get one here.
+        $examAccounts->ensure($user);
 
         return Inertia::render('User/Kartu', [
             'kartu' => [
@@ -71,6 +79,9 @@ class DashboardController extends Controller
                 'jenjang' => $user->jenjang?->label(),
                 'jenjang_kode' => $user->jenjang?->value,
                 'tahun' => config('ppdb.tahun'),
+                'gelombang' => $user->registrationPeriod?->name,
+                'exam_username' => $user->exam_username,
+                'exam_password' => $user->exam_password,
             ],
         ]);
     }

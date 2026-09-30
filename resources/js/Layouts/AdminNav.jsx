@@ -1,6 +1,6 @@
 import React from "react";
 import {Link} from "@inertiajs/react";
-import {GlobeIcon, LayoutDashboardIcon, ListChecksIcon, UsersIcon} from "lucide-react";
+import {CalendarRangeIcon, GlobeIcon, KeyRoundIcon, LayoutDashboardIcon, ListChecksIcon, UsersIcon} from "lucide-react";
 import AppLayout from "./AppLayout";
 
 const sections = [
@@ -11,8 +11,10 @@ const sections = [
     {
         title: 'Pengelolaan',
         items: [
+            {title: 'Gelombang Pendaftaran', href: '/admin/gelombang', icon: CalendarRangeIcon},
             {title: 'Menu & Formulir', href: '/admin/menu', icon: ListChecksIcon},
             {title: 'Data Siswa', href: '/admin/siswa', icon: UsersIcon},
+            {title: 'Akun Ujian', href: '/admin/akun-ujian', icon: KeyRoundIcon},
         ],
     },
 ]

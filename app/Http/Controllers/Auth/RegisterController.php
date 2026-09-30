@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\Jenjang;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\RegistrationSchedule;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -37,7 +38,7 @@ class RegisterController extends Controller
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(private RegistrationSchedule $schedule)
     {
         $this->middleware('guest');
     }
@@ -47,6 +48,7 @@ class RegisterController extends Controller
         return Inertia::render('Auth/Register', [
             'jenjangOptions' => Jenjang::options(),
             'jenjang' => Jenjang::tryFrom((string) request('jenjang'))?->value ?? '',
+            'pendaftaran' => $this->schedule->summary(),
         ]);
     }
 
@@ -58,7 +60,13 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'jenjang' => ['required', Rule::enum(Jenjang::class)],
+            'jenjang' => ['required', Rule::enum(Jenjang::class), function (string $attribute, mixed $value, \Closure $fail) {
+                $jenjang = Jenjang::tryFrom((string) $value);
+
+                if ($jenjang && ! $this->schedule->for($jenjang)['open']) {
+                    $fail("Pendaftaran {$jenjang->label()} sedang ditutup.");
+                }
+            }],
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'alpha_dash', 'min:4', 'max:30', 'unique:users'],
             'no_hp' => ['required', 'string', 'max:30', 'regex:/^[0-9+\-\s()]+$/'],
@@ -73,12 +81,16 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
+        $user = new User([
             'jenjang' => $data['jenjang'],
             'name' => $data['name'],
             'username' => $data['username'],
             'no_hp' => $data['no_hp'],
             'password' => $data['password'],
         ]);
+        $user->registration_period_id = $this->schedule->currentPeriod(Jenjang::from($data['jenjang']))?->id;
+        $user->save();
+
+        return $user;
     }
 }

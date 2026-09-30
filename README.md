@@ -22,7 +22,15 @@ npm run build                # or `npm run dev` while developing
 
 Admins log in at `/login` like students and land on `/admin`, where **Menu & Formulir** manages the menus and form fields per level and **Data Siswa** lists registrations.
 
-Timeline dates on the student dashboard and landing page, and the academic year, are set in `config/ppdb.php`.
+Timeline dates on the student dashboard and landing page, and the academic year, are set in `config/ppdb.php`. Times use `APP_TIMEZONE` (default `Asia/Jakarta`).
+
+### Registration periods (gelombang)
+
+Under **Gelombang Pendaftaran** admins add periods with an opening and closing time, for one level or for all levels. A level without any period is always open, so nothing changes until the first period is added. Once a level has periods, students can only register while one of them is open. The landing page, top bar and register page show which periods are open or coming up, and closed levels cannot be chosen. Each student is linked to the period they registered in (shown on their dashboard and exam card, and as a filter in **Data Siswa**). Periods for the same level may not overlap.
+
+### Exam accounts
+
+Each verified student gets a login for the external exam (e-learning/CBT) system, as in ppdb2020: the username is their NISN (or their registration number when there is no NISN) and the password a random 10-character code without look-alike characters. The account is created when an admin sets the status to Terverifikasi, is printed on the exam card, and is listed under **Akun Ujian**, where admins can create missing accounts, issue a new password and download a CSV for the exam system. Passwords are readable by admins and the student but stored encrypted (Laravel's `encrypted` cast), so keep `APP_KEY` safe when moving servers.
 
 ### School identity
 
@@ -70,8 +78,10 @@ What is carried over:
 - **Form data**: every `biodatas` column, in menus that mirror the old forms (Data Pribadi, Data Orang Tua, Data Wali, Data Sekolah, Prestasi, Dokumen). Existing fields with the same meaning are reused, missing ones are created. Birth dates typed as `dd/mm/yyyy` become dates; values not in a dropdown's choices are added as choices and listed in the report.
 - **Documents**: KK, akta, rapor, SKL and the profile photo, copied into private storage.
 - **Status**: waiting → Menunggu Verifikasi, rejected (with the committee's comment) → Perlu Perbaikan, accepted → Terverifikasi, and the selection result → Lulus / Tidak Lulus. The old exam number becomes the registration number (e.g. `MA-2024-007`).
+- **Exam accounts**: the e-learning username and password from the old exam card.
+- **Registration periods**: every `regist_sessions` wave becomes a period of the imported level, and each student is linked to the wave they registered in. If none of them is open any more, registration for that level is closed until you add a new period; the import report says so.
 
-Not imported: payments (`pembayarans`), registration waves, logs, settings, and the e-learning exam accounts.
+Not imported: payments (`pembayarans`), logs and settings.
 
 The import runs in a single transaction, so an error leaves nothing half-imported. Running it again skips students it already imported.
 

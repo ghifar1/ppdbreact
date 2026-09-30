@@ -1,9 +1,10 @@
 import React from "react";
 import {Head, Link, useForm} from "@inertiajs/react";
-import {UserPlusIcon} from "lucide-react";
+import {CalendarClockIcon, CalendarX2Icon, UserPlusIcon} from "lucide-react";
 import AuthLayout from "../../Layouts/AuthLayout";
 import FieldError from "@/components/FieldError";
 import PasswordInput from "@/components/PasswordInput";
+import PeriodList from "@/components/PeriodList";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -22,7 +23,54 @@ const Field = ({id, label, error, hint, className, children})=>(
     </div>
 )
 
-const Register = ({jenjangOptions, jenjang})=>{
+/** Short availability text under each jenjang choice. */
+function availability(status)
+{
+    if (!status?.restricted) {
+        return null
+    }
+    if (status.open) {
+        return {closed: false, text: `s.d. ${status.current.closes_label.split(',')[0]}`}
+    }
+
+    return {closed: true, text: status.next ? `Dibuka ${status.next.opens_label.split(',')[0]}` : 'Ditutup'}
+}
+
+/** Shown instead of the form when no jenjang is open. */
+const Closed = ({pendaftaran})=>{
+
+    const upcoming = pendaftaran.periods.filter(period => period.status === 'upcoming')
+
+    return (
+        <>
+            <Head title="Pendaftaran ditutup"/>
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary text-primary">
+                <CalendarX2Icon className="size-7"/>
+            </div>
+            <h1 className="mt-5 font-serif text-3xl font-semibold tracking-tight">Pendaftaran sedang ditutup</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+                {upcoming.length > 0
+                    ? 'Pendaftaran akan dibuka kembali pada gelombang berikut.'
+                    : 'Belum ada gelombang pendaftaran berikutnya. Pantau informasi dari panitia PPDB.'}
+            </p>
+            {upcoming.length > 0 && <div className="mt-6"><PeriodList periods={upcoming} compact/></div>}
+            <p className="mt-8 text-sm text-muted-foreground">
+                Sudah punya akun? <Link href="/login" className="font-semibold text-primary hover:underline">Masuk</Link>
+            </p>
+        </>
+    )
+}
+
+const Register = ({jenjangOptions, jenjang, pendaftaran})=>{
+
+    if (!jenjangOptions.some(option => pendaftaran.jenjang[option.value].open)) {
+        return <Closed pendaftaran={pendaftaran}/>
+    }
+
+    return <RegisterForm jenjangOptions={jenjangOptions} jenjang={jenjang} pendaftaran={pendaftaran}/>
+}
+
+const RegisterForm = ({jenjangOptions, jenjang, pendaftaran})=>{
 
     const form = useForm({
         jenjang: jenjang,
@@ -38,6 +86,8 @@ const Register = ({jenjangOptions, jenjang})=>{
         e.preventDefault()
         form.post('/register', {onFinish: () => form.reset('password', 'password_confirmation')})
     }
+
+    const selected = form.data.jenjang ? pendaftaran.jenjang[form.data.jenjang] : null
 
     const input = (key, props = {}) => (
         <Input id={key} value={form.data[key]} aria-invalid={form.errors[key] ? true : undefined} className="h-10"
@@ -62,17 +112,26 @@ const Register = ({jenjangOptions, jenjang})=>{
                                 className="grid grid-cols-3 gap-2" aria-invalid={form.errors.jenjang ? true : undefined}>
                         {jenjangOptions.map(option => {
                             const style = jenjangStyle(option.value)
+                            const state = availability(pendaftaran.jenjang[option.value])
 
                             return (
                                 <Label key={option.value} htmlFor={`jenjang-${option.value}`}
                                        className={cn(
                                            "relative flex cursor-pointer flex-col items-start gap-1 overflow-hidden rounded-xl border-2 bg-card p-3 pt-4 font-normal transition hover:bg-accent",
                                            form.data.jenjang === option.value ? style.border : 'border-border',
+                                           state?.closed && "cursor-not-allowed opacity-60 hover:bg-card",
                                        )}>
                                     <span className={cn("absolute inset-x-0 top-0 h-1.5", style.bar)}/>
-                                    <RadioGroupItem value={option.value} id={`jenjang-${option.value}`} className="absolute top-4 right-3"/>
+                                    <RadioGroupItem value={option.value} id={`jenjang-${option.value}`} disabled={state?.closed}
+                                                    className="absolute top-4 right-3"/>
                                     <span className={cn("font-serif text-2xl font-semibold", style.text)}>{option.short}</span>
                                     <span className="text-xs leading-snug text-muted-foreground">{option.label}</span>
+                                    {state && (
+                                        <span className={cn("mt-1 text-[11px] font-semibold leading-tight",
+                                            state.closed ? "text-muted-foreground" : "text-primary")}>
+                                            {state.text}
+                                        </span>
+                                    )}
                                 </Label>
                             )
                         })}
@@ -105,7 +164,21 @@ const Register = ({jenjangOptions, jenjang})=>{
                     </Field>
                 </div>
 
-                <Button type="submit" size="lg" className="mt-1 h-11" disabled={form.processing}>
+                {selected?.restricted && (
+                    <div className={cn("flex items-start gap-3 rounded-xl border px-4 py-3 text-sm",
+                        selected.open ? "border-primary/30 bg-secondary/60 text-secondary-foreground" : "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100")}>
+                        <CalendarClockIcon className="mt-0.5 size-4 shrink-0"/>
+                        <p>
+                            {selected.open
+                                ? <>Kamu mendaftar di <b>{selected.current.name}</b>, ditutup {selected.current.closes_label}.</>
+                                : selected.next
+                                    ? <>Pendaftaran jenjang ini belum dibuka. <b>{selected.next.name}</b> dibuka {selected.next.opens_label}.</>
+                                    : <>Pendaftaran jenjang ini sudah ditutup.</>}
+                        </p>
+                    </div>
+                )}
+
+                <Button type="submit" size="lg" className="mt-1 h-11" disabled={form.processing || (selected && !selected.open)}>
                     <UserPlusIcon/> {form.processing ? 'Memproses…' : 'Buat akun'}
                 </Button>
             </form>

@@ -1,6 +1,6 @@
 import React from "react";
 import {Link, usePage} from "@inertiajs/react";
-import {ArrowRightIcon, ClipboardCheckIcon, GlobeIcon, ListChecksIcon, UsersIcon} from "lucide-react";
+import {ArrowRightIcon, CalendarRangeIcon, ClipboardCheckIcon, KeyRoundIcon, ListChecksIcon, UsersIcon} from "lucide-react";
 import AdminNav from "../../Layouts/AdminNav";
 import PageHeader from "@/components/PageHeader";
 import Pattern from "@/components/Pattern";
@@ -20,9 +20,10 @@ const barColors = {
 
 const quickLinks = [
     {href: '/admin/siswa?status=menunggu_verifikasi', icon: ClipboardCheckIcon, title: 'Verifikasi pendaftar', text: 'Periksa data yang sudah diajukan'},
+    {href: '/admin/gelombang', icon: CalendarRangeIcon, title: 'Gelombang pendaftaran', text: 'Atur kapan pendaftaran dibuka'},
     {href: '/admin/menu', icon: ListChecksIcon, title: 'Menu & formulir', text: 'Atur isian formulir per jenjang'},
     {href: '/admin/siswa', icon: UsersIcon, title: 'Data siswa', text: 'Cari dan kelola pendaftar'},
-    {href: '/', icon: GlobeIcon, title: 'Halaman publik', text: 'Lihat halaman pendaftaran'},
+    {href: '/admin/akun-ujian', icon: KeyRoundIcon, title: 'Akun ujian', text: 'Login ujian siswa terverifikasi'},
 ]
 
 const Dashboard = ({jenjang, status, total})=>{

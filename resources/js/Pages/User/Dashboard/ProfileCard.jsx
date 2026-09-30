@@ -43,6 +43,12 @@ export const ProfileCard = ({profil})=>{
                         <dt className="text-muted-foreground">Status</dt>
                         <dd><StatusBadge status={profil.status} label={profil.status_label}/></dd>
                     </div>
+                    {profil.gelombang && (
+                        <div className="flex items-center justify-between gap-3">
+                            <dt className="text-muted-foreground">Gelombang</dt>
+                            <dd className="font-medium">{profil.gelombang}</dd>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between gap-3">
                         <dt className="text-muted-foreground">No. HP</dt>
                         <dd>{profil.no_hp || '-'}</dd>

@@ -55,7 +55,7 @@ function content(profil, dataLengkap, firstIncomplete)
             return {
                 icon: IdCardIcon,
                 title: 'Data terverifikasi. Kartu ujian siap!',
-                text: 'Cetak kartu ujian dan bawa saat mengikuti seleksi.',
+                text: 'Cetak kartu ujian dan bawa saat mengikuti seleksi. Akun untuk masuk ke sistem ujian tertera di kartu.',
                 action: (
                     <Button asChild variant="gold" size="lg">
                         <Link href="/kartu"><IdCardIcon/> Buka Kartu Ujian</Link>

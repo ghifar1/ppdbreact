@@ -26,7 +26,7 @@ const Welcome = ()=>{
 
                     <div className="mt-2">
                             <Link href="/login" className="block text-center bg-white rounded-md py-1 my-1">Login</Link>
-                        <Link href="/reg" className="block text-center bg-white rounded-md py-1 my-1">Daftar</Link>
+                        <Link href="/register?jenjang=mi" className="block text-center bg-white rounded-md py-1 my-1">Daftar</Link>
                     </div>
                 </div>
                 <div className="w-full sm:w-72 h-60 bg-blue-500 rounded-md p-3 m-3">
@@ -41,8 +41,8 @@ const Welcome = ()=>{
                     </div>
 
                     <div className="mt-2">
-                        <a className="block text-center bg-white rounded-md py-1 my-1">Login</a>
-                        <a className="block text-center bg-white rounded-md py-1 my-1">Daftar</a>
+                        <Link href="/login" className="block text-center bg-white rounded-md py-1 my-1">Login</Link>
+                        <Link href="/register?jenjang=mts" className="block text-center bg-white rounded-md py-1 my-1">Daftar</Link>
                     </div>
                 </div>
                 <div className="w-full sm:w-72 h-60 bg-blue-800 rounded-md p-3 m-3">
@@ -57,8 +57,8 @@ const Welcome = ()=>{
                     </div>
 
                     <div className="mt-2">
-                        <a className="block text-center bg-white rounded-md py-1 my-1">Login</a>
-                        <a className="block text-center bg-white rounded-md py-1 my-1">Daftar</a>
+                        <Link href="/login" className="block text-center bg-white rounded-md py-1 my-1">Login</Link>
+                        <Link href="/register?jenjang=ma" className="block text-center bg-white rounded-md py-1 my-1">Daftar</Link>
                     </div>
                 </div>
             </div>

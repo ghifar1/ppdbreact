@@ -22,13 +22,6 @@ class LoginController extends Controller
     use AuthenticatesUsers;
 
     /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
-    protected $redirectTo = '/home';
-
-    /**
      * Create a new controller instance.
      *
      * @return void
@@ -42,5 +35,21 @@ class LoginController extends Controller
     public function showLoginForm()
     {
         return Inertia::render('Auth/Login');
+    }
+
+    /**
+     * Students log in with their username instead of an email address.
+     */
+    public function username()
+    {
+        return 'username';
+    }
+
+    /**
+     * Where to redirect users after login.
+     */
+    public function redirectTo(): string
+    {
+        return $this->guard()->user()->homePath();
     }
 }

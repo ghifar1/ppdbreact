@@ -4,14 +4,7 @@ import {PageTitle} from "../../../Layouts/PageTitle";
 import {ProfileCard} from "./ProfileCard";
 import {ProgressUser} from "./ProgressUser";
 
-const profil = {
-    'nama': 'Muhammad Al Ghifari',
-    'status_akun': 'Pengisian Data',
-    'no_hp' : '+6281905101057',
-    'jenis_pendaftaran': 'Offline',
-}
-
-const Index = ()=>{
+const Index = ({profil, dataLengkap, jadwal})=>{
 
     return  (
         <>
@@ -20,7 +13,7 @@ const Index = ()=>{
                 <div className="w-auto">
                     <ProfileCard profil={profil}></ProfileCard>
                 </div>
-                <ProgressUser profil={profil}></ProgressUser>
+                <ProgressUser profil={profil} dataLengkap={dataLengkap} jadwal={jadwal}></ProgressUser>
             </div>
         </>
     )
@@ -29,4 +22,3 @@ const Index = ()=>{
 Index.layout = page => <UserNav>{page}</UserNav>
 
 export default Index
-

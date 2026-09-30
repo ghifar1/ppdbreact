@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\FormService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,9 +36,27 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
-            //
+            'auth' => [
+                'user' => fn () => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'username' => $user->username,
+                    'isAdmin' => $user->isAdmin(),
+                    'jenjang' => $user->jenjang?->shortLabel(),
+                    'status' => $user->status->value,
+                ] : null,
+            ],
+            'studentMenus' => fn () => $user && ! $user->isAdmin()
+                ? app(FormService::class)->progress($user)
+                : [],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
         ];
     }
 }

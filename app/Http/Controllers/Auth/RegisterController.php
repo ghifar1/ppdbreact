@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\Jenjang;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Foundation\Auth\RegistersUsers;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class RegisterController extends Controller
 {
@@ -28,7 +30,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/dashboard';
 
     /**
      * Create a new controller instance.
@@ -40,6 +42,14 @@ class RegisterController extends Controller
         $this->middleware('guest');
     }
 
+    public function showRegistrationForm()
+    {
+        return Inertia::render('Auth/Register', [
+            'jenjangOptions' => Jenjang::options(),
+            'jenjang' => Jenjang::tryFrom((string) request('jenjang'))?->value ?? '',
+        ]);
+    }
+
     /**
      * Get a validator for an incoming registration request.
      *
@@ -48,23 +58,27 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
+            'jenjang' => ['required', Rule::enum(Jenjang::class)],
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'username' => ['required', 'alpha_dash', 'min:4', 'max:30', 'unique:users'],
+            'no_hp' => ['required', 'string', 'max:30', 'regex:/^[0-9+\-\s()]+$/'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
     }
 
     /**
-     * Create a new user instance after a valid registration.
+     * Create a new student after a valid registration.
      *
      * @return User
      */
     protected function create(array $data)
     {
         return User::create([
+            'jenjang' => $data['jenjang'],
             'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'username' => $data['username'],
+            'no_hp' => $data['no_hp'],
+            'password' => $data['password'],
         ]);
     }
 }

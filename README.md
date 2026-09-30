@@ -1,3 +1,33 @@
+# PPDB React
+
+Online student admission (PPDB) for MI, MTs and MA, built with Laravel, Inertia, React and shadcn/ui.
+
+- **Students** register with a username, pick their school level, and fill in the forms under each menu.
+- **Admins** decide which menus each level has and which fields each form contains, then review, verify and grade registrations.
+
+## Setup
+
+Requires PHP 8.3+, Composer, Node.js 20+ and a MySQL database.
+
+```bash
+composer install
+cp .env.example .env        # then set DB_DATABASE, DB_USERNAME, DB_PASSWORD
+php artisan key:generate
+php artisan migrate
+php artisan db:seed          # default menus (Data Pribadi, Orang Tua, Sekolah, Prestasi) for every level
+php artisan ppdb:admin       # create the first admin account
+npm install
+npm run build                # or `npm run dev` while developing
+```
+
+Admins log in at `/login` like students and land on `/admin`, where **Menu & Formulir** manages the menus and form fields per level and **Data Siswa** lists registrations.
+
+Timeline dates on the student dashboard and the academic year on the exam card are set in `config/ppdb.php`.
+
+Uploaded files are stored privately in `storage/app/private/ppdb` and are only served to the owning student and admins.
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
 
 <p align="center">

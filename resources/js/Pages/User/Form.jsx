@@ -1,12 +1,37 @@
 import React, {useState} from "react";
 import {Link, useForm, usePage} from "@inertiajs/react";
-import {ArrowRightIcon, LockIcon} from "lucide-react";
-import {BsInfoCircle} from "react-icons/bs";
+import {ArrowLeftIcon, ArrowRightIcon, CheckIcon, InfoIcon, LockIcon, SaveIcon} from "lucide-react";
 import UserNav from "../../Layouts/UserNav";
-import {PageTitle} from "../../Layouts/PageTitle";
 import FormFieldInput from "@/components/FormFieldInput";
+import PageHeader from "@/components/PageHeader";
 import {Button} from "@/components/ui/button";
-import {Card, CardContent} from "@/components/ui/card";
+import {cn} from "@/lib/utils";
+
+/** Pills for every form menu, so the student sees where they are. */
+const Steps = ({menus, currentId})=>(
+    <nav className="-mx-1 mb-6 flex gap-2 overflow-x-auto px-1 pb-1" aria-label="Formulir">
+        {menus.map((menu, i) => {
+            const current = menu.id === currentId
+
+            return (
+                <Link key={menu.id} href={`/formulir/${menu.id}`} aria-current={current ? 'step' : undefined}
+                      className={cn(
+                          "flex shrink-0 items-center gap-2 rounded-full border py-1.5 pr-4 pl-1.5 text-sm font-medium transition-colors",
+                          current ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-accent",
+                      )}>
+                    <span className={cn(
+                        "flex size-6 items-center justify-center rounded-full text-xs font-bold",
+                        current ? "bg-gold text-gold-foreground"
+                            : menu.complete ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                    )}>
+                        {menu.complete && !current ? <CheckIcon className="size-3.5" strokeWidth={3}/> : i + 1}
+                    </span>
+                    {menu.title}
+                </Link>
+            )
+        })}
+    </nav>
+)
 
 const Form = ({menu, fields, values, canEdit})=>{
 
@@ -36,68 +61,78 @@ const Form = ({menu, fields, values, canEdit})=>{
     }
 
     const position = studentMenus.findIndex(item => item.id === menu.id)
+    const previous = studentMenus[position - 1]
     const next = studentMenus[position + 1]
+    const complete = studentMenus[position]?.complete
 
     return (
         <>
-            <PageTitle>{menu.title}</PageTitle>
+            <PageHeader
+                eyebrow={position >= 0 ? `Formulir ${position + 1} dari ${studentMenus.length}` : 'Formulir'}
+                title={menu.title}
+                actions={complete
+                    ? <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-semibold text-primary"><CheckIcon className="size-4"/> Lengkap</span>
+                    : <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">Belum lengkap</span>}
+            />
 
-            {(menu.description || !canEdit) && (
-                <div className="my-3">
-                    <Card>
-                        <CardContent className="grid gap-2">
-                            {menu.description && (
-                                <div className="flex justify-start items-center gap-2">
-                                    <BsInfoCircle className="shrink-0"/>
-                                    <div className="text-sm whitespace-pre-line">{menu.description}</div>
-                                </div>
-                            )}
-                            {!canEdit && (
-                                <div className="flex justify-start items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
-                                    <LockIcon className="w-4 h-4 shrink-0"/>
-                                    Data sudah diajukan untuk finalisasi sehingga tidak dapat diubah.
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+            <Steps menus={studentMenus} currentId={menu.id}/>
+
+            {!canEdit && (
+                <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
+                    <LockIcon className="mt-0.5 size-4 shrink-0"/>
+                    Data sudah diajukan untuk finalisasi sehingga tidak dapat diubah.
                 </div>
             )}
 
-            <form className="my-3 mb-8" onSubmit={submit}>
-                <Card>
-                    <CardContent>
-                        {fields.length === 0 && (
-                            <p className="text-sm text-muted-foreground">Belum ada isian di menu ini.</p>
-                        )}
-                        {fields.map(field => (
-                            <FormFieldInput
-                                key={field.type === 'file' ? `${field.id}-${fileInputKey}` : field.id}
-                                field={field}
-                                value={form.data.answers[field.id]}
-                                onChange={value => setAnswer(field.id, value)}
-                                error={form.errors[`answers.${field.id}`]}
-                                disabled={!canEdit}
-                                storedFile={field.type === 'file' ? values[field.id] : null}
-                            />
-                        ))}
+            <form onSubmit={submit} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                {menu.description && (
+                    <div className="flex items-start gap-3 border-b bg-secondary/60 px-6 py-4 text-sm text-secondary-foreground">
+                        <InfoIcon className="mt-0.5 size-4 shrink-0"/>
+                        <p className="whitespace-pre-line">{menu.description}</p>
+                    </div>
+                )}
 
-                        {(canEdit && fields.length > 0) || next ? (
-                            <div className="flex flex-wrap items-center justify-between gap-2 pt-4 mt-4 border-t">
-                                {canEdit && fields.length > 0 ? (
-                                    <Button type="submit" disabled={form.processing}
-                                            className="bg-purple-600 text-white hover:bg-purple-700">
-                                        {form.processing ? 'Menyimpan…' : 'Simpan'}
-                                    </Button>
-                                ) : <span/>}
-                                {next && (
-                                    <Button asChild variant="ghost" className="text-purple-600 dark:text-purple-400">
-                                        <Link href={`/formulir/${next.id}`}>{next.title} <ArrowRightIcon/></Link>
-                                    </Button>
-                                )}
-                            </div>
-                        ) : null}
-                    </CardContent>
-                </Card>
+                <div className="grid gap-x-6 gap-y-5 p-6 sm:grid-cols-2 sm:p-8">
+                    {fields.length === 0 && (
+                        <p className="text-sm text-muted-foreground sm:col-span-2">Belum ada isian di formulir ini.</p>
+                    )}
+                    {fields.map(field => (
+                        <FormFieldInput
+                            key={field.type === 'file' ? `${field.id}-${fileInputKey}` : field.id}
+                            field={field}
+                            value={form.data.answers[field.id]}
+                            onChange={value => setAnswer(field.id, value)}
+                            error={form.errors[`answers.${field.id}`]}
+                            disabled={!canEdit}
+                            storedFile={field.type === 'file' ? values[field.id] : null}
+                        />
+                    ))}
+                </div>
+
+                <div className="flex flex-col-reverse gap-3 border-t bg-muted/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                    <div className="flex gap-2">
+                        {previous && (
+                            <Button asChild variant="ghost">
+                                <Link href={`/formulir/${previous.id}`}><ArrowLeftIcon/> Sebelumnya</Link>
+                            </Button>
+                        )}
+                        {next && (
+                            <Button asChild variant="ghost">
+                                <Link href={`/formulir/${next.id}`}>{next.title} <ArrowRightIcon/></Link>
+                            </Button>
+                        )}
+                    </div>
+                    {canEdit && fields.length > 0 && (
+                        <div className="flex items-center gap-4">
+                            <p className="hidden text-xs text-muted-foreground md:block">
+                                Tanda <span className="font-bold text-destructive">*</span> wajib diisi
+                            </p>
+                            <Button type="submit" size="lg" disabled={form.processing}>
+                                <SaveIcon/> {form.processing ? 'Menyimpan…' : 'Simpan'}
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </form>
         </>
     )

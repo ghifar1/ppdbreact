@@ -47,8 +47,14 @@ class HandleInertiaRequests extends Middleware
                     'username' => $user->username,
                     'isAdmin' => $user->isAdmin(),
                     'jenjang' => $user->jenjang?->shortLabel(),
+                    'jenjang_kode' => $user->jenjang?->value,
                     'status' => $user->status->value,
                 ] : null,
+            ],
+            'sekolah' => fn () => [
+                ...config('ppdb.sekolah'),
+                'logo' => config('ppdb.sekolah.logo') ? asset(config('ppdb.sekolah.logo')) : null,
+                'tahun' => config('ppdb.tahun'),
             ],
             'studentMenus' => fn () => $user && ! $user->isAdmin()
                 ? app(FormService::class)->progress($user)

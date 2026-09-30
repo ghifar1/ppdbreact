@@ -1,10 +1,29 @@
 import React, {useState} from "react";
-import {Link, router, useForm} from "@inertiajs/react";
-import {ArrowDownIcon, ArrowLeftIcon, ArrowUpIcon, PencilIcon, PlusIcon, Trash2Icon} from "lucide-react";
+import {router, useForm} from "@inertiajs/react";
+import {
+    AlignLeftIcon,
+    ArrowDownIcon,
+    ArrowUpIcon,
+    AtSignIcon,
+    CalendarIcon,
+    CircleDotIcon,
+    EyeIcon,
+    HashIcon,
+    ListIcon,
+    PaperclipIcon,
+    PencilIcon,
+    PhoneIcon,
+    PlusIcon,
+    SquareCheckIcon,
+    Trash2Icon,
+    TypeIcon,
+} from "lucide-react";
 import AdminNav from "../../../Layouts/AdminNav";
-import {PageTitle} from "../../../Layouts/PageTitle";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import FieldError from "@/components/FieldError";
 import FormFieldInput from "@/components/FormFieldInput";
+import JenjangBadge from "@/components/JenjangBadge";
+import PageHeader from "@/components/PageHeader";
 import FieldDialog from "./FieldDialog";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
@@ -12,8 +31,20 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Switch} from "@/components/ui/switch";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {Textarea} from "@/components/ui/textarea";
+
+const typeIcons = {
+    text: TypeIcon,
+    textarea: AlignLeftIcon,
+    number: HashIcon,
+    email: AtSignIcon,
+    tel: PhoneIcon,
+    date: CalendarIcon,
+    select: ListIcon,
+    radio: CircleDotIcon,
+    checkbox: SquareCheckIcon,
+    file: PaperclipIcon,
+}
 
 const MenuSettings = ({menu})=>{
 
@@ -32,7 +63,8 @@ const MenuSettings = ({menu})=>{
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Pengaturan menu</CardTitle>
+                <CardTitle className="font-serif text-lg">Pengaturan menu</CardTitle>
+                <CardDescription>Judul dan keterangan yang dilihat siswa.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={submit} className="grid gap-4">
@@ -41,22 +73,22 @@ const MenuSettings = ({menu})=>{
                         <Input id="menu-title" value={form.data.title}
                                aria-invalid={form.errors.title ? true : undefined}
                                onChange={e => form.setData('title', e.target.value)}/>
-                        {form.errors.title && <p className="text-sm text-red-600 dark:text-red-400">{form.errors.title}</p>}
+                        <FieldError message={form.errors.title}/>
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="menu-description">Keterangan untuk siswa (opsional)</Label>
                         <Textarea id="menu-description" rows={3} value={form.data.description}
                                   placeholder="Ditampilkan di atas formulir"
                                   onChange={e => form.setData('description', e.target.value)}/>
-                        {form.errors.description && <p className="text-sm text-red-600 dark:text-red-400">{form.errors.description}</p>}
+                        <FieldError message={form.errors.description}/>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
                         <Switch id="menu-active" checked={form.data.is_active}
                                 onCheckedChange={checked => form.setData('is_active', checked)}/>
                         <Label htmlFor="menu-active" className="font-normal">Tampilkan menu ini ke siswa</Label>
                     </div>
                     <div>
-                        <Button type="submit" disabled={form.processing}>Simpan pengaturan</Button>
+                        <Button type="submit" className="w-full" disabled={form.processing}>Simpan pengaturan</Button>
                     </div>
                 </form>
             </CardContent>
@@ -69,13 +101,18 @@ const Preview = ({menu, fields})=>{
     const [values, setValues] = useState({})
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Pratinjau</CardTitle>
-                <CardDescription>Tampilan formulir ini di halaman siswa. Isian di sini tidak disimpan.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {menu.description && <p className="mb-2 text-sm">{menu.description}</p>}
+        <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+            <div className="flex items-center gap-3 border-b px-6 py-4">
+                <EyeIcon className="size-5 text-primary"/>
+                <div>
+                    <h2 className="font-serif text-lg font-semibold">Pratinjau</h2>
+                    <p className="text-sm text-muted-foreground">Tampilan formulir ini di halaman siswa. Isian di sini tidak disimpan.</p>
+                </div>
+            </div>
+            {menu.description && (
+                <p className="border-b bg-secondary/60 px-6 py-3 text-sm whitespace-pre-line text-secondary-foreground">{menu.description}</p>
+            )}
+            <div className="grid gap-x-6 gap-y-5 p-6 sm:grid-cols-2">
                 {fields.length === 0 && <p className="text-sm text-muted-foreground">Belum ada isian.</p>}
                 {fields.map(field => (
                     <FormFieldInput
@@ -85,8 +122,8 @@ const Preview = ({menu, fields})=>{
                         onChange={value => setValues(current => ({...current, [field.id]: value}))}
                     />
                 ))}
-            </CardContent>
-        </Card>
+            </div>
+        </section>
     )
 }
 
@@ -99,94 +136,87 @@ const Edit = ({menu, fields, fieldTypes})=>{
 
     return (
         <>
-            <div className="mt-6">
-                <Link href={`/admin/menu?jenjang=${menu.jenjang}`}
-                      className="inline-flex items-center gap-1 text-sm text-purple-600 hover:underline dark:text-purple-400">
-                    <ArrowLeftIcon className="w-4 h-4"/> Daftar menu {menu.jenjang_label}
-                </Link>
-            </div>
-            <PageTitle>
-                {menu.title} {!menu.is_active && <Badge variant="outline" className="align-middle">Disembunyikan</Badge>}
-            </PageTitle>
+            <PageHeader
+                back={{href: `/admin/menu?jenjang=${menu.jenjang}`, label: `Daftar menu ${menu.jenjang_label}`}}
+                headTitle={menu.title}
+                title={<span className="flex flex-wrap items-center gap-3">
+                    {menu.title}
+                    {!menu.is_active && <Badge variant="outline" className="font-sans">Disembunyikan</Badge>}
+                </span>}
+                description={<JenjangBadge jenjang={menu.jenjang}>{menu.jenjang_label}</JenjangBadge>}
+                actions={<Button onClick={() => setDialog({open: true, field: null})}><PlusIcon/> Tambah isian</Button>}
+            />
 
-            <div className="grid gap-6 mb-8 lg:grid-cols-3">
-                <div className="grid gap-6 lg:col-span-2 content-start">
-                    <Card>
-                        <CardHeader className="flex flex-row items-start justify-between gap-4">
-                            <div className="grid gap-2">
-                                <CardTitle>Isian formulir</CardTitle>
-                                <CardDescription>Pertanyaan yang diisi siswa, sesuai urutan di bawah.</CardDescription>
-                            </div>
-                            <Button onClick={() => setDialog({open: true, field: null})}><PlusIcon/> Tambah isian</Button>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-24">Urutan</TableHead>
-                                        <TableHead>Label</TableHead>
-                                        <TableHead>Tipe</TableHead>
-                                        <TableHead className="w-24">Jawaban</TableHead>
-                                        <TableHead className="w-28 text-right">Aksi</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {fields.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                                                Belum ada isian. Klik <b>Tambah isian</b> untuk membuat pertanyaan pertama.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                    {fields.map((field, i) => (
-                                        <TableRow key={field.id}>
-                                            <TableCell>
-                                                <div className="flex gap-1">
-                                                    <Button variant="ghost" size="icon-sm" disabled={i === 0} aria-label="Naikkan"
-                                                            onClick={() => move(field, 'up')}><ArrowUpIcon/></Button>
-                                                    <Button variant="ghost" size="icon-sm" disabled={i === fields.length - 1} aria-label="Turunkan"
-                                                            onClick={() => move(field, 'down')}><ArrowDownIcon/></Button>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="font-medium whitespace-normal">
+            <div className="grid gap-6 lg:grid-cols-3">
+                <div className="grid content-start gap-6 lg:col-span-2">
+                    <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                        <div className="border-b px-6 py-4">
+                            <h2 className="font-serif text-lg font-semibold">Isian formulir</h2>
+                            <p className="text-sm text-muted-foreground">{fields.length} pertanyaan, diisi siswa sesuai urutan di bawah.</p>
+                        </div>
+                        {fields.length === 0 && (
+                            <p className="px-6 py-10 text-center text-sm text-muted-foreground">
+                                Belum ada isian. Klik <b>Tambah isian</b> untuk membuat pertanyaan pertama.
+                            </p>
+                        )}
+                        <ul className="divide-y">
+                            {fields.map((field, i) => {
+                                const Icon = typeIcons[field.type] ?? TypeIcon
+
+                                return (
+                                    <li key={field.id} className="flex items-center gap-3 px-4 py-3 sm:px-6">
+                                        <div className="flex flex-col">
+                                            <Button variant="ghost" size="icon-xs" disabled={i === 0} aria-label="Naikkan"
+                                                    onClick={() => move(field, 'up')}><ArrowUpIcon/></Button>
+                                            <Button variant="ghost" size="icon-xs" disabled={i === fields.length - 1} aria-label="Turunkan"
+                                                    onClick={() => move(field, 'down')}><ArrowDownIcon/></Button>
+                                        </div>
+                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary" title={field.type_label}>
+                                            <Icon className="size-4"/>
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-medium">
                                                 {field.label}
-                                                {field.is_required && <span className="ml-1 text-red-500 font-bold">*</span>}
-                                                {field.options.length > 0 && (
-                                                    <p className="text-xs font-normal text-muted-foreground">{field.options.join(' · ')}</p>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="whitespace-normal">{field.type_label}</TableCell>
-                                            <TableCell>{field.answers_count}</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-1">
-                                                    <Button variant="ghost" size="icon-sm" aria-label={`Ubah ${field.label}`}
-                                                            onClick={() => setDialog({open: true, field})}><PencilIcon/></Button>
-                                                    <ConfirmDialog
-                                                        title={`Hapus isian "${field.label}"?`}
-                                                        description={field.answers_count > 0
-                                                            ? `${field.answers_count} jawaban siswa untuk isian ini akan ikut terhapus.`
-                                                            : 'Isian ini akan dihapus dari formulir.'}
-                                                        confirmLabel="Hapus isian"
-                                                        destructive
-                                                        onConfirm={() => destroy(field)}
-                                                    >
-                                                        <Button variant="ghost" size="icon-sm" aria-label={`Hapus ${field.label}`}>
-                                                            <Trash2Icon className="text-red-600"/>
-                                                        </Button>
-                                                    </ConfirmDialog>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                                                {field.is_required && <span className="ml-1 font-bold text-destructive">*</span>}
+                                            </p>
+                                            <p className="truncate text-xs text-muted-foreground">
+                                                {field.type_label}
+                                                {field.options.length > 0 && ` · ${field.options.join(', ')}`}
+                                                {' · '}{field.answers_count} jawaban
+                                            </p>
+                                        </div>
+                                        <div className="flex shrink-0 gap-1">
+                                            <Button variant="ghost" size="icon-sm" aria-label={`Ubah ${field.label}`}
+                                                    onClick={() => setDialog({open: true, field})}><PencilIcon/></Button>
+                                            <ConfirmDialog
+                                                title={`Hapus isian "${field.label}"?`}
+                                                description={field.answers_count > 0
+                                                    ? `${field.answers_count} jawaban siswa untuk isian ini akan ikut terhapus.`
+                                                    : 'Isian ini akan dihapus dari formulir.'}
+                                                confirmLabel="Hapus isian"
+                                                destructive
+                                                onConfirm={() => destroy(field)}
+                                            >
+                                                <Button variant="ghost" size="icon-sm" aria-label={`Hapus ${field.label}`}>
+                                                    <Trash2Icon className="text-destructive"/>
+                                                </Button>
+                                            </ConfirmDialog>
+                                        </div>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                        <div className="border-t bg-muted/40 px-6 py-3">
+                            <Button variant="ghost" size="sm" onClick={() => setDialog({open: true, field: null})}>
+                                <PlusIcon/> Tambah isian
+                            </Button>
+                        </div>
+                    </section>
 
                     <Preview menu={menu} fields={fields}/>
                 </div>
 
-                <div className="content-start">
+                <div className="content-start lg:sticky lg:top-22">
                     <MenuSettings key={menu.id} menu={menu}/>
                 </div>
             </div>

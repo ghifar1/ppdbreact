@@ -1,5 +1,6 @@
 import React, {useEffect} from "react";
 import {useForm} from "@inertiajs/react";
+import FieldError from "@/components/FieldError";
 import {Button} from "@/components/ui/button";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
@@ -19,7 +20,6 @@ const toFormData = field => ({
     help_text: field.help_text ?? '',
 })
 
-const FieldError = ({message}) => message ? <p className="text-sm text-red-600 dark:text-red-400">{message}</p> : null
 
 /**
  * Add or edit one form field. `field` is null when adding a new one.
@@ -51,7 +51,7 @@ const FieldDialog = ({open, onOpenChange, menuId, field, fieldTypes})=>{
             <DialogContent className="sm:max-w-lg">
                 <form onSubmit={submit} className="grid gap-4">
                     <DialogHeader>
-                        <DialogTitle>{field ? 'Ubah isian' : 'Tambah isian'}</DialogTitle>
+                        <DialogTitle className="font-serif text-xl">{field ? 'Ubah isian' : 'Tambah isian'}</DialogTitle>
                         <DialogDescription>Pertanyaan yang akan diisi siswa di menu ini.</DialogDescription>
                     </DialogHeader>
 
@@ -77,7 +77,7 @@ const FieldDialog = ({open, onOpenChange, menuId, field, fieldTypes})=>{
                         </Select>
                         {field && field.type !== form.data.type && field.answers_count > 0
                             && ['file', 'checkbox'].some(t => t === field.type || t === form.data.type) && (
-                            <p className="text-sm text-amber-700 dark:text-amber-400">
+                            <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
                                 Mengganti tipe ini akan menghapus {field.answers_count} jawaban siswa yang sudah ada.
                             </p>
                         )}
@@ -114,10 +114,10 @@ const FieldDialog = ({open, onOpenChange, menuId, field, fieldTypes})=>{
                         <FieldError message={form.errors.help_text}/>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
                         <Checkbox id="field-required" checked={form.data.is_required}
                                   onCheckedChange={checked => form.setData('is_required', checked === true)}/>
-                        <Label htmlFor="field-required" className="font-normal">Wajib diisi (tanda <span className="text-red-500 font-bold">*</span>)</Label>
+                        <Label htmlFor="field-required" className="font-normal">Wajib diisi (tanda <span className="font-bold text-destructive">*</span>)</Label>
                     </div>
 
                     <DialogFooter>

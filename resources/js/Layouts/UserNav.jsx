@@ -1,24 +1,64 @@
 import React from "react";
-import {usePage} from "@inertiajs/react";
-import {MdAssignment, MdDashboard} from "react-icons/md";
+import {Link, usePage} from "@inertiajs/react";
+import {IdCardIcon, LayoutDashboardIcon, LifeBuoyIcon} from "lucide-react";
 import AppLayout from "./AppLayout";
+
+const withExamCard = ['terverifikasi', 'lulus', 'tidak_lulus']
+
+/** How many form menus are complete, shown at the top of the student sidebar. */
+const Progress = ({menus})=>{
+
+    const done = menus.filter(menu => menu.complete).length
+    const percent = menus.length ? Math.round(done / menus.length * 100) : 0
+
+    return (
+        <div className="rounded-xl bg-white/[0.06] p-4 ring-1 ring-white/10">
+            <div className="flex items-baseline justify-between text-sm">
+                <span className="font-medium text-white">Kelengkapan data</span>
+                <span className="font-semibold text-sidebar-primary">{percent}%</span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10" role="progressbar"
+                 aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label="Kelengkapan data">
+                <div className="h-full rounded-full bg-sidebar-primary transition-all" style={{width: `${percent}%`}}/>
+            </div>
+            <p className="mt-2 text-xs text-sidebar-foreground/80">{done} dari {menus.length} formulir lengkap</p>
+        </div>
+    )
+}
 
 const UserNav = ({children})=>{
 
-    const {studentMenus} = usePage().props
+    const {auth, studentMenus} = usePage().props
 
-    const items = [
-        {title: 'Dashboard', href: '/dashboard', icon: MdDashboard, exact: true},
-        ...studentMenus.map(menu => ({
-            title: menu.title,
-            href: `/formulir/${menu.id}`,
-            icon: MdAssignment,
-            complete: menu.complete,
-        })),
+    const sections = [
+        {
+            title: 'Utama',
+            items: [
+                {title: 'Dashboard', href: '/dashboard', icon: LayoutDashboardIcon, exact: true},
+                ...(withExamCard.includes(auth.user?.status) ? [{title: 'Kartu Ujian', href: '/kartu', icon: IdCardIcon}] : []),
+            ],
+        },
+        {
+            title: 'Formulir Pendaftaran',
+            items: studentMenus.map((menu, i) => ({
+                title: menu.title,
+                href: `/formulir/${menu.id}`,
+                number: i + 1,
+                complete: menu.complete,
+            })),
+        },
     ]
 
+    const footer = (
+        <Link href="/help" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-white">
+            <LifeBuoyIcon className="size-5 text-sidebar-primary"/>
+            <span><span className="block font-medium">Butuh bantuan?</span><span className="text-xs opacity-80">Baca panduan pendaftaran</span></span>
+        </Link>
+    )
+
     return (
-        <AppLayout items={items} homeHref="/dashboard" brand="PPDB 2022">
+        <AppLayout sections={sections} homeHref="/dashboard" subtitle="Portal Calon Siswa"
+                   summary={studentMenus.length > 0 && <Progress menus={studentMenus}/>} footer={footer}>
             {children}
         </AppLayout>
     )

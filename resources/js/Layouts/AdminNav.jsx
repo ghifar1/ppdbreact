@@ -1,20 +1,33 @@
 import React from "react";
-import {MdDashboard, MdPeople, MdViewList} from "react-icons/md";
+import {Link} from "@inertiajs/react";
+import {GlobeIcon, LayoutDashboardIcon, ListChecksIcon, UsersIcon} from "lucide-react";
 import AppLayout from "./AppLayout";
 
-const items = [
-    {title: 'Dashboard', href: '/admin', icon: MdDashboard, exact: true},
-    {title: 'Menu & Formulir', href: '/admin/menu', icon: MdViewList},
-    {title: 'Data Siswa', href: '/admin/siswa', icon: MdPeople},
+const sections = [
+    {
+        title: 'Utama',
+        items: [{title: 'Dashboard', href: '/admin', icon: LayoutDashboardIcon, exact: true}],
+    },
+    {
+        title: 'Pengelolaan',
+        items: [
+            {title: 'Menu & Formulir', href: '/admin/menu', icon: ListChecksIcon},
+            {title: 'Data Siswa', href: '/admin/siswa', icon: UsersIcon},
+        ],
+    },
 ]
 
-const AdminNav = ({children})=>{
+const footer = (
+    <Link href="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-white">
+        <GlobeIcon className="size-5 text-sidebar-primary"/>
+        <span><span className="block font-medium">Halaman publik</span><span className="text-xs opacity-80">Lihat seperti calon siswa</span></span>
+    </Link>
+)
 
-    return (
-        <AppLayout items={items} homeHref="/admin" brand="Admin PPDB">
-            {children}
-        </AppLayout>
-    )
-}
+const AdminNav = ({children})=>(
+    <AppLayout sections={sections} homeHref="/admin" subtitle="Panel Panitia PPDB" footer={footer}>
+        {children}
+    </AppLayout>
+)
 
 export default AdminNav

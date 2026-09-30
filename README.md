@@ -22,7 +22,23 @@ npm run build                # or `npm run dev` while developing
 
 Admins log in at `/login` like students and land on `/admin`, where **Menu & Formulir** manages the menus and form fields per level and **Data Siswa** lists registrations.
 
-Timeline dates on the student dashboard and the academic year on the exam card are set in `config/ppdb.php`.
+Timeline dates on the student dashboard and landing page, and the academic year, are set in `config/ppdb.php`.
+
+### School identity
+
+The school's name and contact details appear in the header, footer, login page and exam card. Set them in `.env`:
+
+```dotenv
+PPDB_SEKOLAH="Madrasah Al-Hikmah"
+PPDB_YAYASAN="Yayasan Pendidikan Al-Hikmah"   # optional
+PPDB_ALAMAT="Jl. Pendidikan No. 1, Bogor"      # optional, shown in the footer
+PPDB_TELEPON="0251-123456"                      # optional
+PPDB_EMAIL="ppdb@example.sch.id"                # optional
+PPDB_LOGO=images/logo.png                       # optional, a file in public/; the built-in crest is used when empty
+PPDB_TAHUN=2027/2028
+```
+
+The theme (deep green and gold, with uniform colors per level: MI red, MTs navy, MA grey) lives in `resources/css/app.css` as CSS variables, so colors can be changed in one place. Dark mode is supported and remembered per browser.
 
 Uploaded files are stored privately in `storage/app/private/ppdb` and are only served to the owning student and admins.
 

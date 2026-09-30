@@ -1,43 +1,81 @@
 import React from "react";
+import {usePage} from "@inertiajs/react";
 import {PrinterIcon} from "lucide-react";
 import UserNav from "../../Layouts/UserNav";
-import {PageTitle} from "../../Layouts/PageTitle";
+import PageHeader from "@/components/PageHeader";
+import Pattern from "@/components/Pattern";
+import SchoolLogo from "@/components/SchoolLogo";
 import {Button} from "@/components/ui/button";
+import {cn} from "@/lib/utils";
+import {jenjangStyle} from "@/lib/jenjang";
+
+const Row = ({label, children, mono = false})=>(
+    <div className="grid grid-cols-[9rem_1fr] gap-2 border-b border-dashed border-stone-300 py-2 last:border-0">
+        <dt className="text-stone-500">{label}</dt>
+        <dd className={cn("font-semibold text-stone-900", mono && "font-mono")}>{children}</dd>
+    </div>
+)
 
 const Kartu = ({kartu})=>{
 
+    const {sekolah} = usePage().props
+    const style = jenjangStyle(kartu.jenjang_kode)
+
     return (
         <>
-            <div className="print:hidden">
-                <PageTitle>Kartu Ujian</PageTitle>
-            </div>
+            <PageHeader
+                eyebrow="Seleksi"
+                title="Kartu Ujian"
+                description="Cetak kartu ini dan bawa saat mengikuti ujian seleksi."
+                actions={<Button onClick={() => window.print()} size="lg"><PrinterIcon/> Cetak kartu</Button>}
+            />
 
-            <div className="max-w-xl p-6 mb-6 bg-white border-2 border-gray-800 rounded-lg text-gray-900 print:mt-0 print:border-black">
-                <div className="pb-3 mb-4 text-center border-b-2 border-gray-800">
-                    <p className="text-sm tracking-widest uppercase">Kartu Peserta Ujian</p>
-                    <p className="text-xl font-bold">PPDB {kartu.jenjang}</p>
-                    <p className="text-sm">Tahun Ajaran {kartu.tahun}</p>
+            {/* Fixed light colors: this card is meant to be printed. */}
+            <article className="mx-auto mb-10 max-w-2xl overflow-hidden rounded-2xl border-2 border-[#0f5a41] bg-[#fffdf6] text-stone-900 shadow-lg print:mt-0 print:shadow-none">
+                <header className="relative flex items-center gap-4 overflow-hidden bg-[#0f5a41] px-6 py-5 text-white print:[print-color-adjust:exact]">
+                    <Pattern className="text-white/10" size={40}/>
+                    <SchoolLogo className="relative h-16 w-14"/>
+                    <div className="relative min-w-0 flex-1">
+                        {sekolah.yayasan && <p className="text-xs text-white/80">{sekolah.yayasan}</p>}
+                        <p className="font-serif text-xl font-semibold">{sekolah.nama}</p>
+                        <p className="text-xs text-white/80">Penerimaan Peserta Didik Baru · Tahun Ajaran {kartu.tahun}</p>
+                    </div>
+                </header>
+                <div className="h-1.5 bg-[#d4a72c] print:[print-color-adjust:exact]"/>
+
+                <div className="px-6 pt-5 text-center">
+                    <p className="text-xs font-semibold tracking-[0.3em] text-[#0f5a41] uppercase">Kartu Peserta Ujian Seleksi</p>
                 </div>
-                <dl className="grid grid-cols-3 gap-y-2 text-sm">
-                    <dt>No. Pendaftaran</dt>
-                    <dd className="col-span-2 font-mono font-semibold">: {kartu.nomor_pendaftaran}</dd>
-                    <dt>Nama</dt>
-                    <dd className="col-span-2 font-semibold">: {kartu.nama}</dd>
-                    <dt>Username</dt>
-                    <dd className="col-span-2">: {kartu.username}</dd>
-                    <dt>Jenjang</dt>
-                    <dd className="col-span-2">: {kartu.jenjang}</dd>
-                </dl>
-                <p className="mt-6 text-xs text-gray-600">
-                    Bawa kartu ini saat ujian seleksi.
-                </p>
-            </div>
 
-            <div className="mb-8 print:hidden">
-                <Button onClick={() => window.print()} className="bg-purple-600 text-white hover:bg-purple-700">
-                    <PrinterIcon/> Cetak kartu
-                </Button>
-            </div>
+                <div className="grid gap-6 p-6 sm:grid-cols-[1fr_auto]">
+                    <dl className="text-sm">
+                        <Row label="No. Pendaftaran" mono>{kartu.nomor_pendaftaran}</Row>
+                        <Row label="Nama">{kartu.nama}</Row>
+                        <Row label="Username">{kartu.username}</Row>
+                        <Row label="Jenjang">
+                            <span className={cn("inline-flex items-center gap-2", style.text)}>
+                                <span className={cn("size-2.5 rounded-full print:[print-color-adjust:exact]", style.bar)}/>
+                                <span className="text-stone-900">{kartu.jenjang}</span>
+                            </span>
+                        </Row>
+                    </dl>
+                    <div className="flex h-40 w-30 items-center justify-center self-start justify-self-center rounded-md border-2 border-dashed border-stone-400 text-center text-xs text-stone-500">
+                        Pas foto<br/>3 × 4
+                    </div>
+                </div>
+
+                <footer className="grid gap-6 border-t border-stone-200 px-6 py-5 text-xs sm:grid-cols-2">
+                    <ul className="grid list-disc content-start gap-1 pl-4 text-stone-600">
+                        <li>Tempel pas foto terbaru ukuran 3 × 4.</li>
+                        <li>Bawa kartu ini saat ujian seleksi.</li>
+                    </ul>
+                    <div className="text-center text-stone-600 sm:text-right">
+                        <p>Panitia PPDB</p>
+                        <div className="h-14"/>
+                        <p className="inline-block min-w-40 border-t border-stone-400 pt-1 font-semibold text-stone-800">{sekolah.nama}</p>
+                    </div>
+                </footer>
+            </article>
         </>
     )
 }

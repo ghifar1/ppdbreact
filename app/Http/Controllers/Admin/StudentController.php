@@ -78,6 +78,7 @@ class StudentController extends Controller
                 'username' => $student->username,
                 'no_hp' => $student->no_hp,
                 'jenjang' => $student->jenjang?->label(),
+                'jenjang_kode' => $student->jenjang?->value,
                 'status' => $student->status->value,
                 'status_label' => $student->status->label(),
                 'catatan_admin' => $student->catatan_admin,

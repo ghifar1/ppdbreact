@@ -4,6 +4,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Identitas Sekolah
+    |--------------------------------------------------------------------------
+    |
+    | Shown in the header, footer, login page and exam card. `logo` is a path
+    | inside public/ (e.g. "images/logo.png"); leave it empty to use the
+    | built-in crest.
+    |
+    */
+
+    'sekolah' => [
+        'nama' => env('PPDB_SEKOLAH', 'Madrasah Terpadu'),
+        'yayasan' => env('PPDB_YAYASAN'),
+        'alamat' => env('PPDB_ALAMAT'),
+        'telepon' => env('PPDB_TELEPON'),
+        'email' => env('PPDB_EMAIL'),
+        'logo' => env('PPDB_LOGO'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Tahun Ajaran
     |--------------------------------------------------------------------------
     |

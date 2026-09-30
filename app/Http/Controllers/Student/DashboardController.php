@@ -24,6 +24,7 @@ class DashboardController extends Controller
                 'username' => $user->username,
                 'no_hp' => $user->no_hp,
                 'jenjang' => $user->jenjang?->label(),
+                'jenjang_kode' => $user->jenjang?->value,
                 'nomor_pendaftaran' => $user->nomorPendaftaran(),
                 'status' => $user->status->value,
                 'status_label' => $user->status->label(),
@@ -68,6 +69,7 @@ class DashboardController extends Controller
                 'nama' => $user->name,
                 'username' => $user->username,
                 'jenjang' => $user->jenjang?->label(),
+                'jenjang_kode' => $user->jenjang?->value,
                 'tahun' => config('ppdb.tahun'),
             ],
         ]);

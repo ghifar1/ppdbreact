@@ -1,5 +1,5 @@
 import React from "react";
-import {Link, usePage} from "@inertiajs/react";
+import {Link, router, usePage} from "@inertiajs/react";
 import {
     ArrowRightIcon,
     BanknoteIcon,
@@ -12,6 +12,7 @@ import AdminNav from "../../Layouts/AdminNav";
 import PageHeader from "@/components/PageHeader";
 import Pattern from "@/components/Pattern";
 import StatusBadge from "@/components/StatusBadge";
+import YearSelect from "@/components/YearSelect";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {cn} from "@/lib/utils";
 import {jenjangStyle} from "@/lib/jenjang";
@@ -33,9 +34,11 @@ const quickLinks = [
     {href: '/admin/pengaturan', icon: SlidersHorizontalIcon, title: 'Pengaturan seleksi', text: 'Biaya, batas waktu dan pengumuman'},
 ]
 
-const Dashboard = ({jenjang, status, total, pembayaranMenunggu})=>{
+const Dashboard = ({jenjang, status, total, pembayaranMenunggu, tahun, tahunOptions})=>{
 
     const {sekolah} = usePage().props
+    // Links to the student list keep the chosen year.
+    const year = tahun === 'semua' ? '' : `&tahun=${tahun}`
     const menunggu = status.find(item => item.value === 'menunggu_verifikasi')?.total ?? 0
 
     return (
@@ -43,7 +46,11 @@ const Dashboard = ({jenjang, status, total, pembayaranMenunggu})=>{
             <PageHeader
                 eyebrow="Panel panitia"
                 title="Dashboard PPDB"
-                description={`Ringkasan pendaftaran Tahun Ajaran ${sekolah.tahun}.`}
+                description={tahun === 'semua'
+                    ? `Ringkasan semua pendaftaran. Tahun Ajaran berjalan: ${sekolah.tahun}.`
+                    : `Ringkasan pendaftaran tahun ${tahun} (Tahun Ajaran ${sekolah.tahun}).`}
+                actions={<YearSelect value={tahun} options={tahunOptions} className="w-44"
+                                     onChange={value => router.get('/admin', {tahun: value}, {preserveState: true, replace: true})}/>}
             />
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -52,7 +59,7 @@ const Dashboard = ({jenjang, status, total, pembayaranMenunggu})=>{
                     <div className="relative">
                         <p className="text-sm text-brand-foreground/80">Total pendaftar</p>
                         <p className="mt-2 font-serif text-4xl font-semibold text-white">{total}</p>
-                        <Link href="/admin/siswa?status=menunggu_verifikasi"
+                        <Link href={`/admin/siswa?status=menunggu_verifikasi${year}`}
                               className="mt-3 flex items-center gap-1 text-sm font-medium text-gold hover:underline">
                             {menunggu} menunggu verifikasi <ArrowRightIcon className="size-4"/>
                         </Link>
@@ -68,7 +75,7 @@ const Dashboard = ({jenjang, status, total, pembayaranMenunggu})=>{
                     const style = jenjangStyle(item.value)
 
                     return (
-                        <Link key={item.value} href={`/admin/siswa?jenjang=${item.value}`}
+                        <Link key={item.value} href={`/admin/siswa?jenjang=${item.value}${year}`}
                               className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition hover:shadow-md">
                             <span className={cn("absolute inset-y-0 left-0 w-1.5", style.bar)}/>
                             <p className="text-sm text-muted-foreground">{item.label}</p>
@@ -85,13 +92,13 @@ const Dashboard = ({jenjang, status, total, pembayaranMenunggu})=>{
                 <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle className="font-serif text-lg">Status pendaftaran</CardTitle>
-                        <CardDescription>{total} siswa terdaftar di semua jenjang.</CardDescription>
+                        <CardDescription>{total} siswa terdaftar di semua jenjang{tahun === 'semua' ? '' : ` pada tahun ${tahun}`}.</CardDescription>
                     </CardHeader>
                     <CardContent className="px-3">
                         <ul className="grid gap-1">
                             {status.map(item => (
                                 <li key={item.value}>
-                                    <Link href={`/admin/siswa?status=${item.value}`}
+                                    <Link href={`/admin/siswa?status=${item.value}${year}`}
                                           className="grid grid-cols-[10.5rem_1fr_2.5rem] items-center gap-4 rounded-lg px-3 py-2.5 hover:bg-accent">
                                         <StatusBadge status={item.value} label={item.label}/>
                                         <span className="h-2 overflow-hidden rounded-full bg-muted">

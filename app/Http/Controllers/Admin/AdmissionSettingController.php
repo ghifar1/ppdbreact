@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Jenjang;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdmissionSettingRequest;
+use App\Models\ActivityLog;
 use App\Models\AdmissionSetting;
 use App\Models\RegistrationPeriod;
 use Illuminate\Http\RedirectResponse;
@@ -40,7 +41,13 @@ class AdmissionSettingController extends Controller
     {
         $jenjang = Jenjang::tryFrom($jenjang) ?? abort(404);
 
-        AdmissionSetting::for($jenjang)->fill($request->validated())->save();
+        $settings = AdmissionSetting::for($jenjang)->fill($request->validated());
+
+        if ($settings->isDirty()) {
+            ActivityLog::record('pengaturan.simpan', "Menyimpan pengaturan seleksi {$jenjang->label()}", properties: ['diubah' => array_keys($settings->getDirty())]);
+        }
+
+        $settings->save();
 
         return back()->with('success', "Pengaturan {$jenjang->label()} disimpan.");
     }

@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Jenjang;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\StudentAccounts;
+use App\Support\RegistrationYears;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,8 +26,10 @@ class PaymentController extends Controller
             'status' => ['nullable', Rule::in([...array_column(PaymentStatus::cases(), 'value'), 'semua'])],
             'jenjang' => ['nullable', Rule::enum(Jenjang::class)],
             'q' => ['nullable', 'string', 'max:100'],
+            'tahun' => ['nullable', 'string', 'max:10'],
         ]);
         $status = $filters['status'] ?? PaymentStatus::Menunggu->value;
+        $year = RegistrationYears::selected($filters['tahun'] ?? null);
 
         $payments = Payment::query()
             ->with(['user', 'reviewer', 'registrationPeriod'])
@@ -40,6 +44,7 @@ class PaymentController extends Controller
                     ->where('name', 'like', "%{$search}%")
                     ->orWhere('username', 'like', "%{$search}%"))))
             ->when($status !== 'semua', fn (Builder $query) => $query->where('status', $status))
+            ->when($year, fn (Builder $query, int $year) => $query->whereYear('payments.created_at', $year))
             ->orderByRaw('submitted_at is null')
             ->orderBy($status === PaymentStatus::Menunggu->value ? 'submitted_at' : 'updated_at', $status === PaymentStatus::Menunggu->value ? 'asc' : 'desc')
             ->paginate(20)
@@ -57,8 +62,11 @@ class PaymentController extends Controller
 
         return Inertia::render('Admin/Payments/Index', [
             'payments' => $payments,
-            'filters' => ['status' => $status, 'jenjang' => $filters['jenjang'] ?? '', 'q' => $filters['q'] ?? ''],
-            'counts' => Payment::selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status'),
+            'filters' => ['status' => $status, 'jenjang' => $filters['jenjang'] ?? '', 'q' => $filters['q'] ?? '', 'tahun' => $year ? (string) $year : ''],
+            'tahunOptions' => RegistrationYears::options(),
+            'counts' => Payment::query()
+                ->when($year, fn (Builder $query, int $year) => $query->whereYear('created_at', $year))
+                ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status'),
             'statusOptions' => PaymentStatus::options(),
             'jenjangOptions' => Jenjang::options(),
         ]);
@@ -74,6 +82,7 @@ class PaymentController extends Controller
 
         if (! $payment->isApplicant()) {
             $payment->update($review);
+            ActivityLog::record('pembayaran.terima', "Menerima pembayaran {$payment->user->name}", $payment->user);
 
             return back()->with('success', "Pembayaran {$payment->user->name} dikonfirmasi lunas.");
         }
@@ -99,6 +108,7 @@ class PaymentController extends Controller
         }
 
         [$student, $password] = $created;
+        ActivityLog::record('pembayaran.terima', "Menerima pembayaran {$student->name} dan membuat akunnya (@{$student->username})", $student, ['kode' => $payment->codeLabel()]);
 
         return redirect()->route('admin.students.login-card', $student)
             ->with('loginCard', ['student' => $student->id, 'password' => $password])
@@ -117,6 +127,7 @@ class PaymentController extends Controller
         ]);
 
         $name = $payment->user?->name ?? $payment->applicant_name;
+        ActivityLog::record('pembayaran.tolak', "Menolak pembayaran {$name}", $payment->user, array_filter(['kode' => $payment->codeLabel(), 'alasan' => $data['note']]));
 
         return back()->with('success', "Pembayaran {$name} ditolak. Alasannya terlihat di halaman status pendaftarannya.");
     }
@@ -145,6 +156,8 @@ class PaymentController extends Controller
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
         ]);
+
+        ActivityLog::record('pembayaran.catat', "Mencatat pembayaran {$student->name} sebesar ".Payment::rupiah($data['amount'])." ({$data['method']})", $student);
 
         return back()->with('success', "Pembayaran {$student->name} sebesar ".Payment::rupiah($data['amount']).' dicatat lunas.');
     }

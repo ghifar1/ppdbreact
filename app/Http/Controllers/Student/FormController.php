@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Enums\FieldType;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
+use App\Models\FormAnswer;
 use App\Models\FormField;
 use App\Models\Menu;
 use App\Services\FormService;
@@ -59,8 +62,35 @@ class FormController extends Controller
         )->validate();
 
         $this->forms->save($user, $menu, $validated['answers'] ?? [], $answers);
+        ActivityLog::record('formulir.simpan', "Menyimpan formulir {$menu->title}", $user);
 
         return back()->with('success', "{$menu->title} berhasil disimpan.");
+    }
+
+    /**
+     * Remove an uploaded file from an optional file field.
+     */
+    public function destroyFile(Request $request, Menu $menu, FormField $field): RedirectResponse
+    {
+        $this->ensureAvailable($request, $menu);
+        $user = $request->user();
+
+        abort_unless($field->menu_id === $menu->id && $field->type === FieldType::File, 404);
+
+        if (! $user->status->canEdit()) {
+            return back()->with('error', 'Data sudah diajukan dan tidak dapat diubah.');
+        }
+
+        if ($field->is_required) {
+            return back()->with('error', "{$field->label} wajib diisi. Unggah berkas pengganti untuk mengubahnya.");
+        }
+
+        $answer = FormAnswer::where('user_id', $user->id)->where('form_field_id', $field->id)->first();
+        $this->forms->deleteFile($answer);
+        $answer?->update(['value' => null]);
+        ActivityLog::record('berkas.hapus', "Menghapus berkas {$field->label} di {$menu->title}", $user);
+
+        return back()->with('success', "Berkas {$field->label} dihapus.");
     }
 
     /**

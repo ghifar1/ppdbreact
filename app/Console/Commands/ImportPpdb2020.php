@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\Jenjang;
 use App\Enums\StatusPendaftaran;
+use App\Models\ActivityLog;
 use App\Services\Ppdb2020\Importer;
 use App\Services\Ppdb2020\ImportReport;
 use Illuminate\Console\Attributes\Description;
@@ -85,6 +86,10 @@ class ImportPpdb2020 extends Command
         }
 
         $this->printReport($report, $dryRun, $files !== null);
+
+        if (! $dryRun && ($report->created || $report->updated)) {
+            ActivityLog::record('impor', "Mengimpor data ppdb2020: {$report->created} akun baru, {$report->updated} diperbarui");
+        }
 
         return self::SUCCESS;
     }

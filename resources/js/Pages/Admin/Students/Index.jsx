@@ -1,25 +1,27 @@
 import React, {useState} from "react";
 import {Link, router} from "@inertiajs/react";
-import {ChevronRightIcon, SearchIcon, UserPlusIcon, UsersIcon} from "lucide-react";
+import {ChevronRightIcon, FileSpreadsheetIcon, SearchIcon, UserPlusIcon, UsersIcon} from "lucide-react";
 import AdminNav from "../../../Layouts/AdminNav";
+import Avatar from "@/components/Avatar";
 import JenjangBadge from "@/components/JenjangBadge";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import PaymentStatusBadge from "@/components/PaymentStatusBadge";
 import StatusBadge from "@/components/StatusBadge";
+import YearSelect from "@/components/YearSelect";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import {initials} from "@/lib/utils";
 
 const ALL = 'semua'
 
-const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions})=>{
+const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions, tahunOptions})=>{
 
     const [q, setQ] = useState(filters.q)
 
     const apply = changes => router.get('/admin/siswa', {...filters, q, ...changes}, {preserveState: true, replace: true})
+    const exportUrl = '/admin/siswa/unduh?' + new URLSearchParams(Object.entries(filters).filter(([, value]) => value)).toString()
 
     return (
         <>
@@ -27,7 +29,14 @@ const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions}
                 eyebrow="Pengelolaan"
                 title="Data Siswa"
                 description={`${students.total} pendaftar sesuai filter. Klik nama siswa untuk melihat data dan memverifikasi.`}
-                actions={<Button asChild><Link href="/admin/siswa/baru"><UserPlusIcon/> Daftarkan siswa</Link></Button>}
+                actions={(
+                    <>
+                        <Button asChild variant="outline">
+                            <a href={exportUrl}><FileSpreadsheetIcon/> Unduh Excel</a>
+                        </Button>
+                        <Button asChild><Link href="/admin/siswa/baru"><UserPlusIcon/> Daftarkan siswa</Link></Button>
+                    </>
+                )}
             />
 
             <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
@@ -37,6 +46,8 @@ const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions}
                         <Input placeholder="Cari nama atau username, lalu tekan Enter" value={q} className="bg-background pl-9"
                                aria-label="Cari siswa" onChange={e => setQ(e.target.value)}/>
                     </form>
+                    <YearSelect value={filters.tahun} options={tahunOptions} className="md:w-40"
+                                onChange={value => apply({tahun: value === ALL ? '' : value})}/>
                     <Select value={filters.jenjang || ALL} onValueChange={value => apply({jenjang: value === ALL ? '' : value})}>
                         <SelectTrigger className="bg-background md:w-44" aria-label="Filter jenjang"><SelectValue/></SelectTrigger>
                         <SelectContent>
@@ -87,9 +98,8 @@ const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions}
                             <TableRow key={student.id}>
                                 <TableCell className="pl-6">
                                     <Link href={`/admin/siswa/${student.id}`} className="flex items-center gap-3">
-                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary">
-                                            {initials(student.name)}
-                                        </span>
+                                        <Avatar name={student.name} src={student.photo_url}
+                                                className="size-9 rounded-full bg-secondary text-xs text-primary"/>
                                         <span>
                                             <span className="block font-semibold hover:text-primary hover:underline">{student.name}</span>
                                             <span className="block text-xs text-muted-foreground">@{student.username}</span>

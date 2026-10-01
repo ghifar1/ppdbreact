@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Jenjang;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Payment;
 use App\Models\RegistrationPeriod;
 use App\Models\User;
@@ -80,6 +81,8 @@ class StudentAccountController extends Controller
             ]);
         }
 
+        ActivityLog::record('akun.buat', "Mendaftarkan {$student->name} di sekolah".($request->boolean('paid_cash') ? ' (bayar tunai)' : ''), $student);
+
         return redirect()->route('admin.students.login-card', $student)
             ->with('loginCard', ['student' => $student->id, 'password' => $password])
             ->with('success', "Akun {$student->name} dibuat. Cetak kartu login dan berikan kepada siswa.");
@@ -122,6 +125,7 @@ class StudentAccountController extends Controller
         $student->forceFill(['password' => $password])->save();
         // The first password, shown on the registration status page, no longer works.
         $student->payment()->update(['account_password' => null]);
+        ActivityLog::record('akun.kartu_login', "Membuat password baru dan kartu login {$student->name}", $student);
 
         return redirect()->route('admin.students.login-card', $student)
             ->with('loginCard', ['student' => $student->id, 'password' => $password])

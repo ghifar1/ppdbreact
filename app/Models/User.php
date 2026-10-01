@@ -8,6 +8,7 @@ use App\Enums\StatusPendaftaran;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -88,6 +89,22 @@ class User extends Authenticatable
     public function nomorPeserta(): ?string
     {
         return $this->exam_number !== null ? sprintf('%03d', $this->exam_number) : null;
+    }
+
+    /**
+     * Address of the profile photo, or null without one.
+     */
+    public function photoUrl(): ?string
+    {
+        return $this->photo_path ? route('users.photo', ['user' => $this, 'v' => substr(md5($this->photo_path), 0, 8)]) : null;
+    }
+
+    /**
+     * Students who registered in this calendar year (ppdb2020's `year`).
+     */
+    public function scopeRegisteredIn(Builder $query, ?int $year): void
+    {
+        $query->when($year, fn (Builder $query) => $query->whereYear('users.created_at', $year));
     }
 
     /**

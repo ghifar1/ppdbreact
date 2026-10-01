@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Jenjang;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegistrationPeriodRequest;
+use App\Models\ActivityLog;
 use App\Models\RegistrationPeriod;
 use App\Models\User;
 use App\Services\RegistrationSchedule;
@@ -28,12 +29,16 @@ class RegistrationPeriodController extends Controller
     {
         $period = RegistrationPeriod::create($request->periodData());
 
+        ActivityLog::record('gelombang.buat', "Menambah {$period->name} ({$period->present()['jenjang_label']}, {$period->present()['range_label']})");
+
         return back()->with('success', "{$period->name} ditambahkan.");
     }
 
     public function update(RegistrationPeriodRequest $request, RegistrationPeriod $period): RedirectResponse
     {
         $period->update($request->periodData());
+
+        ActivityLog::record('gelombang.ubah', "Mengubah {$period->name} ({$period->present()['jenjang_label']}, {$period->present()['range_label']})");
 
         return back()->with('success', "{$period->name} disimpan.");
     }
@@ -42,6 +47,8 @@ class RegistrationPeriodController extends Controller
     {
         User::where('registration_period_id', $period->id)->update(['registration_period_id' => null]);
         $period->delete();
+
+        ActivityLog::record('gelombang.hapus', "Menghapus {$period->name}");
 
         return back()->with('success', "{$period->name} dihapus.");
     }

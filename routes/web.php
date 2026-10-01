@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\HomeController;
@@ -27,6 +28,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/home', HomeController::class)->name('home');
     Route::get('/berkas/{answer}', FileController::class)->name('answers.file');
     Route::get('/bukti-pembayaran/{payment}', PaymentProofController::class)->name('payments.proof');
+    Route::get('/foto-profil/{user}', [AccountController::class, 'photo'])->name('users.photo');
+
+    Route::get('/akun', [AccountController::class, 'edit'])->name('account.edit');
+    Route::put('/akun', [AccountController::class, 'update'])->name('account.update');
+    Route::put('/akun/password', [AccountController::class, 'updatePassword'])->name('account.password');
+    Route::post('/akun/foto', [AccountController::class, 'updatePhoto'])->name('account.photo');
+    Route::delete('/akun/foto', [AccountController::class, 'destroyPhoto'])->name('account.photo.destroy');
 });
 
 Route::middleware(['auth', 'role:student'])->group(function () {
@@ -37,6 +45,7 @@ Route::middleware(['auth', 'role:student'])->group(function () {
     Route::get('/pembayaran', [Student\PaymentController::class, 'show'])->name('pembayaran');
     Route::get('/formulir/{menu}', [Student\FormController::class, 'show'])->name('formulir.show');
     Route::post('/formulir/{menu}', [Student\FormController::class, 'update'])->name('formulir.update');
+    Route::delete('/formulir/{menu}/berkas/{field}', [Student\FormController::class, 'destroyFile'])->name('formulir.file.destroy');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -72,12 +81,20 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/pembayaran/{payment}/tolak', [Admin\PaymentController::class, 'reject'])->name('payments.reject');
     Route::post('/siswa/{student}/pembayaran', [Admin\PaymentController::class, 'record'])->name('payments.record');
 
+    Route::get('/log', [Admin\ActivityLogController::class, 'index'])->name('logs.index');
+
+    Route::get('/panitia', [Admin\AdminAccountController::class, 'index'])->name('admins.index');
+    Route::post('/panitia', [Admin\AdminAccountController::class, 'store'])->name('admins.store');
+    Route::post('/panitia/{admin}/password', [Admin\AdminAccountController::class, 'resetPassword'])->name('admins.password');
+    Route::delete('/panitia/{admin}', [Admin\AdminAccountController::class, 'destroy'])->name('admins.destroy');
+
     Route::get('/akun-ujian', [Admin\ExamAccountController::class, 'index'])->name('exam.index');
     Route::post('/akun-ujian', [Admin\ExamAccountController::class, 'generate'])->name('exam.generate');
     Route::get('/akun-ujian/unduh', [Admin\ExamAccountController::class, 'export'])->name('exam.export');
     Route::post('/siswa/{student}/akun-ujian', [Admin\ExamAccountController::class, 'reset'])->name('exam.reset');
 
     Route::get('/siswa', [Admin\StudentController::class, 'index'])->name('students.index');
+    Route::get('/siswa/unduh', [Admin\StudentController::class, 'export'])->name('students.export');
     Route::get('/siswa/baru', [Admin\StudentAccountController::class, 'create'])->name('students.create');
     Route::post('/siswa', [Admin\StudentAccountController::class, 'store'])->name('students.store');
     Route::get('/siswa/{student}/kartu-login', [Admin\StudentAccountController::class, 'loginCard'])->name('students.login-card');

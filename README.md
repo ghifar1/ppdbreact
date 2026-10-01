@@ -20,7 +20,7 @@ npm install
 npm run build                # or `npm run dev` while developing
 ```
 
-Admins log in at `/login` like students and land on `/admin`, where **Menu & Formulir** manages the menus and form fields per level and **Data Siswa** lists registrations.
+Admins log in at `/login` like students and land on `/admin`, where **Menu & Formulir** manages the menus and form fields per level and **Data Siswa** lists registrations. More admins can be added under **Akun Panitia** (or with `php artisan ppdb:admin`).
 
 The academic year is set in `config/ppdb.php` (`PPDB_TAHUN`); the dates on the student dashboard and landing page come from **Gelombang Pendaftaran**, **Pengaturan Seleksi** and **Jadwal Ujian**. Times use `APP_TIMEZONE` (default `Asia/Jakarta`).
 
@@ -42,6 +42,17 @@ Everything below is set per level under **Pengaturan Seleksi**. A setting left e
 - **Exam schedule.** Under **Jadwal Ujian** admins list the exam activities (date, time, place) for a level and/or registration period. Activities can be split into sessions or rooms by participant number (e.g. 1–60 in Ruang 1, 61–120 in Ruang 2); the copy button prefills the next session. Each verified student gets a participant number (nomor peserta), counted per level and registration year, and their exam card shows only their own sessions, plus the notes set for the card.
 - **Result letter.** After the announcement students can print a letter (surat hasil seleksi) stating Lulus or Tidak Lulus, with the re-registration instructions and the headmaster's name and NIP. Lines starting with `1.` or `-` in the instructions are printed as a list.
 - **Registering at the school.** **Data Siswa → Daftarkan siswa** creates an account for a student who registers in person (optionally recording a cash payment) and shows a printable login card with a generated password, which can also be sent by WhatsApp. The password is shown only once; **Cetak kartu login** on the student's page makes a new one.
+
+### Admin tools
+
+- **Excel export.** **Data Siswa → Unduh Excel** downloads the students in the current list (same filters) as an `.xlsx` workbook, like ppdb2020's "Unduh data siswa": one sheet per level, with the registration details (number, participant number, status, payment, dates) followed by a column for every form field. Uploaded files appear as links admins can open while logged in.
+- **Registration year.** The dashboard counts the current year's registrations by default, as ppdb2020 did; the year menu switches to another year or all years. **Data Siswa**, **Pembayaran** and the export can be filtered by year too.
+- **Activity log.** **Log Aktivitas** records who did what: registrations, saved forms, finalizations, payment proofs, status changes, payments, account changes, exports and changes to the settings, periods, schedule and forms. Each student's page shows their recent history. Entries are never changed.
+- **Committee accounts.** **Akun Panitia** lists the admins, adds new ones and resets their passwords. Admins cannot delete their own account, so one always remains.
+
+### Student accounts
+
+Everyone has an **Akun Saya** page (students in the sidebar, everyone in the account menu) to change their name, phone number, email and password (the current password is required) and to upload a profile photo. A student's photo appears on their dashboard and on the exam card as the pas foto. Once a student has submitted their data, the name and photo are fixed because they are printed on the exam card (a photo can still be added if there was none); the committee can help with corrections. Students can also delete an uploaded file from an optional file field while their forms are open.
 
 ### School identity
 
@@ -88,7 +99,7 @@ What is carried over:
 
 - **Accounts**: name, phone and the old password, so students log in as before. Email logins can use their email (the login page accepts a username or an email); plain-username logins keep their username unless it is taken. Accounts created with Google Sign-In had no password and need a reset from **Data Siswa**. A CSV with each account's new login and a note is written to `storage/app/private/ppdb-import/`.
 - **Form data**: every `biodatas` column, in menus that mirror the old forms (Data Pribadi, Data Orang Tua, Data Wali, Data Sekolah, Prestasi, Dokumen). Existing fields with the same meaning are reused, missing ones are created. Birth dates typed as `dd/mm/yyyy` become dates; values not in a dropdown's choices are added as choices and listed in the report.
-- **Documents**: KK, akta, rapor, SKL and the profile photo, copied into private storage.
+- **Documents**: KK, akta, rapor, SKL and the profile photo, copied into private storage. The profile photo also becomes the student's profile photo.
 - **Status**: waiting → Menunggu Verifikasi, rejected (with the committee's comment) → Perlu Perbaikan, accepted → Terverifikasi, and the selection result → Lulus / Tidak Lulus. The old exam number becomes the registration number (e.g. `MA-2024-007`) and the participant number.
 - **Payment**: imported students count as paid (recorded as "Data ppdb2020"), since ppdb2020 only created accounts after checking the payment.
 - **Exam accounts**: the e-learning username and password from the old exam card.

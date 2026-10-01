@@ -189,6 +189,9 @@ class Ppdb2020ImportTest extends TestCase
 
         $photo = json_decode($this->answer($user, 'foto'), true);
         $this->assertSame('photo', Storage::disk('local')->get($photo['path']));
+        // It is also the profile photo, as it was in ppdb2020.
+        $this->assertStringStartsWith("ppdb/{$user->id}/foto/", $user->photo_path);
+        $this->assertSame('photo', Storage::disk('local')->get($user->photo_path));
 
         $this->assertNull($this->answer($user, 'akte'));
 

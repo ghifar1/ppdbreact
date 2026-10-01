@@ -61,9 +61,14 @@ const Kartu = ({kartu})=>{
                             </span>
                         </Row>
                     </dl>
-                    <div className="flex h-40 w-30 items-center justify-center self-start justify-self-center rounded-md border-2 border-dashed border-stone-400 text-center text-xs text-stone-500">
-                        Pas foto<br/>3 × 4
-                    </div>
+                    {kartu.photo_url ? (
+                        <img src={kartu.photo_url} alt={`Foto ${kartu.nama}`}
+                             className="h-40 w-30 self-start justify-self-center rounded-md border border-stone-300 object-cover"/>
+                    ) : (
+                        <div className="flex h-40 w-30 items-center justify-center self-start justify-self-center rounded-md border-2 border-dashed border-stone-400 text-center text-xs text-stone-500">
+                            Pas foto<br/>3 × 4
+                        </div>
+                    )}
                 </div>
 
                 {kartu.exam_username && (
@@ -100,7 +105,7 @@ const Kartu = ({kartu})=>{
 
                 <footer className="grid gap-6 border-t border-stone-200 px-6 py-5 text-xs sm:grid-cols-2">
                     <ul className="grid list-disc content-start gap-1 pl-4 text-stone-600">
-                        <li>Tempel pas foto terbaru ukuran 3 × 4.</li>
+                        {!kartu.photo_url && <li>Tempel pas foto terbaru ukuran 3 × 4.</li>}
                         <li>Bawa kartu ini saat ujian seleksi.</li>
                         {(kartu.catatan ?? '').split('\n').map(line => line.trim()).filter(Boolean).map(line => <li key={line}>{line}</li>)}
                     </ul>

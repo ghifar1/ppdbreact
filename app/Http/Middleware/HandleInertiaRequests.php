@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                     'id' => $user->id,
                     'name' => $user->name,
                     'username' => $user->username,
+                    'photo_url' => $user->photoUrl(),
                     'isAdmin' => $user->isAdmin(),
                     'jenjang' => $user->jenjang?->shortLabel(),
                     'jenjang_kode' => $user->jenjang?->value,

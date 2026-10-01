@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\FieldType;
 use App\Enums\Jenjang;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\FormField;
 use App\Models\Menu;
 use App\Services\FormService;
@@ -44,6 +45,8 @@ class MenuController extends Controller
         $menu = Menu::create($data + [
             'sort_order' => (int) Menu::where('jenjang', $data['jenjang'])->max('sort_order') + 1,
         ]);
+
+        ActivityLog::record('menu.buat', "Membuat menu {$menu->title} ({$menu->jenjang->shortLabel()})");
 
         return redirect()->route('admin.menus.edit', $menu)
             ->with('success', "Menu \"{$menu->title}\" dibuat. Sekarang tambahkan isian formulirnya.");
@@ -87,6 +90,10 @@ class MenuController extends Controller
             ? ($menu->is_active ? "Menu \"{$menu->title}\" ditampilkan ke siswa." : "Menu \"{$menu->title}\" disembunyikan dari siswa.")
             : 'Menu disimpan.';
 
+        if ($menu->wasChanged()) {
+            ActivityLog::record('menu.ubah', "Mengubah menu {$menu->title} ({$menu->jenjang->shortLabel()})", properties: ['diubah' => array_keys($menu->getChanges())]);
+        }
+
         return back()->with('success', $message);
     }
 
@@ -96,6 +103,7 @@ class MenuController extends Controller
             ->each(fn (FormField $field) => $field->answers->each(fn ($answer) => $forms->deleteFile($answer)));
 
         $menu->delete();
+        ActivityLog::record('menu.hapus', "Menghapus menu {$menu->title} ({$menu->jenjang->shortLabel()})");
 
         return redirect()->route('admin.menus.index', ['jenjang' => $menu->jenjang->value])
             ->with('success', "Menu \"{$menu->title}\" dihapus.");

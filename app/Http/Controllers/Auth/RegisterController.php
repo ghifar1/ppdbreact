@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Enums\Jenjang;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\User;
 use App\Services\Admission;
 use App\Services\RegistrationSchedule;
@@ -99,6 +100,7 @@ class RegisterController extends Controller
         ]);
         $user->registration_period_id = $this->schedule()->currentPeriod(Jenjang::from($data['jenjang']))?->id;
         $user->save();
+        ActivityLog::record('akun.daftar', "Membuat akun pendaftaran {$user->jenjang->shortLabel()}", $user, causer: $user);
 
         return $user;
     }

@@ -1,10 +1,11 @@
 import React, {useState} from "react";
-import {router, useForm} from "@inertiajs/react";
+import {Link, router, useForm} from "@inertiajs/react";
 import {
     BanknoteIcon,
     CircleCheckIcon,
     FileIcon,
     HandCoinsIcon,
+    HistoryIcon,
     KeyRoundIcon,
     MonitorCheckIcon,
     PrinterIcon,
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 import AdminNav from "../../../Layouts/AdminNav";
 import {ConfirmPaymentButton, ProofButton, RejectPaymentButton} from "../Payments/PaymentActions";
+import ActivityList from "@/components/ActivityList";
+import Avatar from "@/components/Avatar";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import FieldError from "@/components/FieldError";
 import JenjangBadge from "@/components/JenjangBadge";
@@ -29,7 +32,6 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Textarea} from "@/components/ui/textarea";
-import {initials} from "@/lib/utils";
 
 function formatValue(field)
 {
@@ -282,7 +284,7 @@ const PasswordForm = ({student})=>{
     )
 }
 
-const Show = ({student, menus, statusOptions, payment})=>{
+const Show = ({student, menus, statusOptions, payment, activity})=>{
 
     const complete = menus.filter(menu => menu.complete).length
 
@@ -298,12 +300,12 @@ const Show = ({student, menus, statusOptions, payment})=>{
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="grid content-start gap-6 lg:col-span-2">
                     <section className="flex flex-col gap-5 rounded-2xl border bg-card p-6 shadow-sm sm:flex-row sm:items-center">
-                        <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-secondary font-serif text-2xl font-semibold text-primary ring-2 ring-gold/60">
-                            {initials(student.name)}
-                        </div>
+                        <Avatar name={student.name} src={student.photo_url}
+                                className="size-20 rounded-xl bg-secondary font-serif text-2xl text-primary ring-2 ring-gold/60"/>
                         <dl className="grid flex-1 grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                             <div><dt className="text-muted-foreground">Username</dt><dd className="font-medium">@{student.username}</dd></div>
                             <div><dt className="text-muted-foreground">No. HP</dt><dd className="font-medium">{student.no_hp || '-'}</dd></div>
+                            {student.email && <div className="min-w-0"><dt className="text-muted-foreground">Email</dt><dd className="truncate font-medium">{student.email}</dd></div>}
                             <div><dt className="text-muted-foreground">Jenjang</dt><dd><JenjangBadge jenjang={student.jenjang_kode}>{student.jenjang}</JenjangBadge></dd></div>
                             <div><dt className="text-muted-foreground">Mendaftar</dt><dd className="font-medium">{student.registered_at}</dd></div>
                             <div><dt className="text-muted-foreground">Diajukan</dt><dd className="font-medium">{student.finalized_at || 'Belum diajukan'}</dd></div>
@@ -350,6 +352,14 @@ const Show = ({student, menus, statusOptions, payment})=>{
                             </div>
                         </section>
                     ))}
+
+                    <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                        <div className="flex flex-wrap items-center gap-2 border-b px-6 py-4">
+                            <h2 className="mr-auto flex items-center gap-2 font-serif text-lg font-semibold"><HistoryIcon className="size-5 text-primary"/> Riwayat aktivitas</h2>
+                            <Link href={`/admin/log?q=${encodeURIComponent(student.name)}`} className="text-sm font-medium text-primary hover:underline">Lihat semua</Link>
+                        </div>
+                        <ActivityList logs={activity} empty="Belum ada aktivitas tercatat." showSubject={false}/>
+                    </section>
                 </div>
 
                 <div className="grid content-start gap-6 lg:sticky lg:top-22">

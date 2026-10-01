@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import {Link, usePage} from "@inertiajs/react";
-import {BookOpenIcon, CheckIcon, ChevronDownIcon, LogOutIcon, MenuIcon, XIcon} from "lucide-react";
+import {BookOpenIcon, CheckIcon, ChevronDownIcon, LogOutIcon, MenuIcon, UserRoundCogIcon, XIcon} from "lucide-react";
+import Avatar from "@/components/Avatar";
 import FlashMessage from "@/components/FlashMessage";
 import Pattern from "@/components/Pattern";
 import SchoolLogo from "@/components/SchoolLogo";
@@ -15,7 +16,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {Sheet, SheetContent, SheetDescription, SheetTitle} from "@/components/ui/sheet";
-import {cn, initials} from "@/lib/utils";
+import {cn} from "@/lib/utils";
 
 function isActive(path, item)
 {
@@ -117,9 +118,8 @@ const AccountMenu = ({homeHref})=>{
             <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-full p-0.5 pr-2 outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
                         aria-label="Akun">
-                    <span className="flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground ring-2 ring-gold">
-                        {initials(auth.user?.name)}
-                    </span>
+                    <Avatar name={auth.user?.name} src={auth.user?.photo_url}
+                            className="size-9 rounded-full bg-primary text-sm text-primary-foreground ring-2 ring-gold"/>
                     <span className="hidden max-w-40 text-left leading-tight md:block">
                         <span className="block truncate text-sm font-semibold">{auth.user?.name}</span>
                         <span className="block text-xs text-muted-foreground">{auth.user?.isAdmin ? 'Panitia PPDB' : `Calon siswa ${auth.user?.jenjang ?? ''}`}</span>
@@ -137,6 +137,9 @@ const AccountMenu = ({homeHref})=>{
                 <DropdownMenuSeparator/>
                 <DropdownMenuItem asChild>
                     <Link href={homeHref}>Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/akun"><UserRoundCogIcon/> Akun saya</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/help"><BookOpenIcon/> Panduan</Link>

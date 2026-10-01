@@ -1,7 +1,8 @@
 import React, {useState} from "react";
-import {Link, useForm, usePage} from "@inertiajs/react";
-import {ArrowLeftIcon, ArrowRightIcon, CheckIcon, InfoIcon, LockIcon, SaveIcon} from "lucide-react";
+import {Link, router, useForm, usePage} from "@inertiajs/react";
+import {ArrowLeftIcon, ArrowRightIcon, CheckIcon, InfoIcon, LockIcon, SaveIcon, Trash2Icon} from "lucide-react";
 import UserNav from "../../Layouts/UserNav";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import FormFieldInput from "@/components/FormFieldInput";
 import PageHeader from "@/components/PageHeader";
 import {Button} from "@/components/ui/button";
@@ -105,6 +106,19 @@ const Form = ({menu, fields, values, canEdit})=>{
                             error={form.errors[`answers.${field.id}`]}
                             disabled={!canEdit}
                             storedFile={field.type === 'file' ? values[field.id] : null}
+                            storedFileAction={canEdit && !field.required && field.type === 'file' && values[field.id] && (
+                                <ConfirmDialog
+                                    title={`Hapus berkas ${field.label}?`}
+                                    description="Berkas ini tidak wajib. Kamu bisa mengunggahnya lagi nanti."
+                                    confirmLabel="Hapus berkas"
+                                    destructive
+                                    onConfirm={() => router.delete(`/formulir/${menu.id}/berkas/${field.id}`, {preserveScroll: true})}
+                                >
+                                    <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                        <Trash2Icon/> Hapus
+                                    </Button>
+                                </ConfirmDialog>
+                            )}
                         />
                     ))}
                 </div>

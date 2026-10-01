@@ -720,6 +720,14 @@ final class Importer
                 ['value' => json_encode(['path' => $path, 'name' => $name])],
             );
             $this->report->filesCopied++;
+
+            // ppdb2020 showed this photo as the profile photo, so it becomes ours too.
+            if ($key === 'foto' && $user->photo_path === null) {
+                $photo = "ppdb/{$user->id}/foto/".basename($path);
+                Storage::disk('local')->copy($path, $photo);
+                $this->written[] = $photo;
+                $user->forceFill(['photo_path' => $photo])->save();
+            }
         }
     }
 

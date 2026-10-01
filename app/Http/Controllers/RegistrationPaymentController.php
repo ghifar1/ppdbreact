@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Jenjang;
 use App\Enums\PaymentStatus;
+use App\Models\ActivityLog;
 use App\Models\Payment;
 use App\Services\Admission;
 use App\Services\RegistrationSchedule;
@@ -52,6 +53,7 @@ class RegistrationPaymentController extends Controller
             'method' => Payment::METHOD_TRANSFER,
         ]);
         $this->storeProof($payment, $data);
+        ActivityLog::record('pembayaran.kirim', "{$payment->applicant_name} mendaftar {$jenjang->shortLabel()} dan mengirim bukti pembayaran", properties: ['kode' => $payment->codeLabel()]);
 
         return redirect()->route('pengajuan.show', $payment->code)
             ->with('success', 'Bukti pembayaran terkirim. Simpan kode pengajuan di bawah untuk memantau pendaftaranmu.');
@@ -99,6 +101,7 @@ class RegistrationPaymentController extends Controller
 
         $data = $request->validate($this->proofRules(), [], $this->attributes());
         $this->storeProof($payment, $data);
+        ActivityLog::record('pembayaran.kirim_ulang', "{$payment->applicant_name} mengirim ulang bukti pembayaran", properties: ['kode' => $payment->codeLabel()]);
 
         return back()->with('success', 'Bukti pembayaran baru terkirim. Panitia akan memeriksanya kembali.');
     }

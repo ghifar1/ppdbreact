@@ -1,11 +1,11 @@
 import React from 'react'
 import {usePage} from "@inertiajs/react";
+import Avatar from "@/components/Avatar";
 import JenjangBadge from "@/components/JenjangBadge";
 import PaymentStatusBadge from "@/components/PaymentStatusBadge";
 import Pattern from "@/components/Pattern";
 import SchoolLogo from "@/components/SchoolLogo";
 import StatusBadge from "@/components/StatusBadge";
-import {initials} from "@/lib/utils";
 
 /** The student's details, styled after a school ID card. */
 export const ProfileCard = ({profil, pembayaran})=>{
@@ -26,9 +26,8 @@ export const ProfileCard = ({profil, pembayaran})=>{
             </div>
             <div className="p-5">
                 <div className="flex items-center gap-4">
-                    <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-secondary font-serif text-2xl font-semibold text-primary ring-2 ring-gold/60">
-                        {initials(profil.nama)}
-                    </div>
+                    <Avatar name={profil.nama} src={profil.photo_url}
+                            className="size-16 rounded-xl bg-secondary font-serif text-2xl text-primary ring-2 ring-gold/60"/>
                     <div className="min-w-0">
                         <p className="truncate text-lg font-semibold">{profil.nama}</p>
                         <p className="text-sm text-muted-foreground">@{profil.username}</p>

@@ -5,9 +5,11 @@ import {
     CalendarDaysIcon,
     CalendarRangeIcon,
     GlobeIcon,
+    HistoryIcon,
     KeyRoundIcon,
     LayoutDashboardIcon,
     ListChecksIcon,
+    ShieldCheckIcon,
     SlidersHorizontalIcon,
     UsersIcon,
 } from "lucide-react";
@@ -23,6 +25,7 @@ const sections = [
         items: [
             {title: 'Data Siswa', href: '/admin/siswa', icon: UsersIcon},
             {title: 'Pembayaran', href: '/admin/pembayaran', icon: BanknoteIcon},
+            {title: 'Log Aktivitas', href: '/admin/log', icon: HistoryIcon},
         ],
     },
     {
@@ -38,6 +41,7 @@ const sections = [
             {title: 'Gelombang Pendaftaran', href: '/admin/gelombang', icon: CalendarRangeIcon},
             {title: 'Pengaturan Seleksi', href: '/admin/pengaturan', icon: SlidersHorizontalIcon},
             {title: 'Menu & Formulir', href: '/admin/menu', icon: ListChecksIcon},
+            {title: 'Akun Panitia', href: '/admin/panitia', icon: ShieldCheckIcon},
         ],
     },
 ]

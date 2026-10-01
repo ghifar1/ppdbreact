@@ -1,6 +1,6 @@
 import React from "react";
 import {Link, usePage} from "@inertiajs/react";
-import {AwardIcon, BanknoteIcon, IdCardIcon, LayoutDashboardIcon, LifeBuoyIcon} from "lucide-react";
+import {AwardIcon, BanknoteIcon, IdCardIcon, LayoutDashboardIcon, LifeBuoyIcon, UserRoundCogIcon} from "lucide-react";
 import AppLayout from "./AppLayout";
 
 const paymentBadges = {
@@ -43,6 +43,7 @@ const UserNav = ({children})=>{
                 ...(studentNav?.payment ? [{title: 'Pembayaran', href: '/pembayaran', icon: BanknoteIcon, badge: paymentBadges[studentNav.payment]}] : []),
                 ...(studentNav?.card ? [{title: 'Kartu Ujian', href: '/kartu', icon: IdCardIcon}] : []),
                 ...(studentNav?.letter ? [{title: 'Hasil Seleksi', href: '/kelulusan', icon: AwardIcon}] : []),
+                {title: 'Akun Saya', href: '/akun', icon: UserRoundCogIcon},
             ],
         },
         {

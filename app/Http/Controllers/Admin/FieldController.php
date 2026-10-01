@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\FieldType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FieldRequest;
+use App\Models\ActivityLog;
 use App\Models\FormField;
 use App\Models\Menu;
 use App\Services\FormService;
@@ -17,9 +18,10 @@ class FieldController extends Controller
 {
     public function store(FieldRequest $request, Menu $menu): RedirectResponse
     {
-        $menu->fields()->create($request->fieldData() + [
+        $field = $menu->fields()->create($request->fieldData() + [
             'sort_order' => (int) $menu->fields()->max('sort_order') + 1,
         ]);
+        ActivityLog::record('isian.buat', "Menambah isian \"{$field->label}\" di menu {$menu->title} ({$menu->jenjang->shortLabel()})");
 
         return back()->with('success', 'Isian ditambahkan.');
     }
@@ -41,6 +43,7 @@ class FieldController extends Controller
         }
 
         $field->update($data);
+        ActivityLog::record('isian.ubah', "Mengubah isian \"{$field->label}\" di menu {$field->menu->title} ({$field->menu->jenjang->shortLabel()})");
 
         return back()->with('success', 'Isian disimpan.');
     }
@@ -52,6 +55,7 @@ class FieldController extends Controller
         }
 
         $field->delete();
+        ActivityLog::record('isian.hapus', "Menghapus isian \"{$field->label}\" dari menu {$field->menu->title} ({$field->menu->jenjang->shortLabel()})");
 
         return back()->with('success', "Isian \"{$field->label}\" dihapus.");
     }

@@ -6,6 +6,7 @@ import JenjangBadge from "@/components/JenjangBadge";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import PaymentStatusBadge from "@/components/PaymentStatusBadge";
+import YearSelect from "@/components/YearSelect";
 import {ConfirmPaymentButton, ProofButton, RejectPaymentButton} from "./PaymentActions";
 import {Input} from "@/components/ui/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
@@ -41,7 +42,7 @@ const PaymentPerson = ({payment})=>{
         : <div className="flex min-w-0 items-center gap-3">{inner}</div>
 }
 
-const Index = ({payments, filters, counts, statusOptions, jenjangOptions})=>{
+const Index = ({payments, filters, counts, statusOptions, jenjangOptions, tahunOptions})=>{
 
     const [q, setQ] = useState(filters.q)
     const apply = changes => router.get('/admin/pembayaran', {...filters, q, ...changes}, {preserveState: true, replace: true})
@@ -83,6 +84,8 @@ const Index = ({payments, filters, counts, statusOptions, jenjangOptions})=>{
                         <Input placeholder="Cari nama, username atau kode pengajuan, lalu tekan Enter" value={q} className="bg-background pl-9"
                                aria-label="Cari siswa" onChange={e => setQ(e.target.value)}/>
                     </form>
+                    <YearSelect value={filters.tahun} options={tahunOptions} className="md:w-40"
+                                onChange={value => apply({tahun: value === ALL ? '' : value})}/>
                     <Select value={filters.jenjang || ALL} onValueChange={value => apply({jenjang: value === ALL ? '' : value})}>
                         <SelectTrigger className="bg-background md:w-44" aria-label="Filter jenjang"><SelectValue/></SelectTrigger>
                         <SelectContent>

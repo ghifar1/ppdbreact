@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Jenjang;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\User;
 use App\Services\ExamAccounts;
 use Illuminate\Http\RedirectResponse;
@@ -51,6 +52,7 @@ class ExamAccountController extends Controller
     public function generate(): RedirectResponse
     {
         $created = $this->accounts->ensureAll();
+        ActivityLog::record('ujian.buat_akun', "Membuat {$created} akun ujian yang belum ada");
 
         return back()->with('success', $created > 0
             ? "{$created} akun ujian dibuat."
@@ -67,6 +69,7 @@ class ExamAccountController extends Controller
 
         $hadAccount = $student->exam_username !== null;
         $this->accounts->resetPassword($student);
+        ActivityLog::record('ujian.reset_password', ($hadAccount ? 'Mengganti password akun ujian ' : 'Membuat akun ujian ').$student->name, $student);
 
         return back()->with('success', $hadAccount
             ? "Password akun ujian {$student->name} diganti."
@@ -79,6 +82,8 @@ class ExamAccountController extends Controller
         $rows = $this->accounts->exportRows(
             $this->filtered($filters)->whereNotNull('exam_username')->orderBy('id')->get(),
         );
+
+        ActivityLog::record('data.unduh', 'Mengunduh akun ujian ('.count($rows).' siswa)', properties: array_filter($filters));
 
         return response()->streamDownload(function () use ($rows) {
             $handle = fopen('php://output', 'w');

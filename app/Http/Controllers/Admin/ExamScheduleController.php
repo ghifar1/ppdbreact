@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Jenjang;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ExamScheduleRequest;
+use App\Models\ActivityLog;
 use App\Models\ExamSchedule;
 use App\Models\RegistrationPeriod;
 use App\Services\ExamAccounts;
@@ -50,6 +51,8 @@ class ExamScheduleController extends Controller
     {
         $item = ExamSchedule::create($request->scheduleData());
 
+        ActivityLog::record('jadwal_ujian.buat', "Menambah jadwal ujian {$item->title} ({$item->present()['date_label']}, {$item->timeLabel()})");
+
         return back()->with('success', "{$item->title} ditambahkan ke jadwal ujian.");
     }
 
@@ -57,12 +60,16 @@ class ExamScheduleController extends Controller
     {
         $schedule->update($request->scheduleData());
 
+        ActivityLog::record('jadwal_ujian.ubah', "Mengubah jadwal ujian {$schedule->title} ({$schedule->present()['date_label']}, {$schedule->timeLabel()})");
+
         return back()->with('success', "{$schedule->title} disimpan.");
     }
 
     public function destroy(ExamSchedule $schedule): RedirectResponse
     {
         $schedule->delete();
+
+        ActivityLog::record('jadwal_ujian.hapus', "Menghapus jadwal ujian {$schedule->title}");
 
         return back()->with('success', "{$schedule->title} dihapus dari jadwal ujian.");
     }

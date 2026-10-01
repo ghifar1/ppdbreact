@@ -71,8 +71,9 @@ function DateInput({id, value, onChange, disabled, invalid}) {
  * field: {id, label, type, options, required, placeholder, help}
  * value: string | string[] | File | null
  * storedFile: {name, url} for an already uploaded file
+ * storedFileAction: element shown next to the stored file, e.g. a delete button
  */
-const FormFieldInput = ({field, value, onChange, error, disabled, storedFile, className})=>{
+const FormFieldInput = ({field, value, onChange, error, disabled, storedFile, storedFileAction, className})=>{
 
     const id = `field-${field.id}`
     const invalid = error ? true : undefined
@@ -134,10 +135,13 @@ const FormFieldInput = ({field, value, onChange, error, disabled, storedFile, cl
             input = (
                 <div className="grid gap-2">
                     {storedFile && (
-                        <a href={storedFile.url} target="_blank" rel="noreferrer"
-                           className="inline-flex w-fit items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:underline">
-                            <FileIcon className="size-4 shrink-0"/> {storedFile.name}
-                        </a>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <a href={storedFile.url} target="_blank" rel="noreferrer"
+                               className="inline-flex w-fit items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:underline">
+                                <FileIcon className="size-4 shrink-0"/> {storedFile.name}
+                            </a>
+                            {storedFileAction}
+                        </div>
                     )}
                     {!disabled && (
                         <label className={cn(

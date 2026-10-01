@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Enums\StatusPendaftaran;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\ExamSchedule;
 use App\Models\User;
 use App\Services\Admission;
@@ -30,6 +31,7 @@ class DashboardController extends Controller
             'profil' => [
                 'nama' => $user->name,
                 'username' => $user->username,
+                'photo_url' => $user->photoUrl(),
                 'no_hp' => $user->no_hp,
                 'jenjang' => $user->jenjang?->label(),
                 'jenjang_kode' => $user->jenjang?->value,
@@ -64,6 +66,7 @@ class DashboardController extends Controller
             'status' => StatusPendaftaran::MenungguVerifikasi,
             'finalized_at' => now(),
         ])->save();
+        ActivityLog::record('finalisasi', 'Mengajukan finalisasi data', $user);
 
         return back()->with('success', 'Data berhasil diajukan. Admin akan memeriksa datamu.');
     }
@@ -83,6 +86,7 @@ class DashboardController extends Controller
             'kartu' => [
                 ...$this->identity($user),
                 'username' => $user->username,
+                'photo_url' => $user->photoUrl(),
                 'exam_username' => $user->exam_username,
                 'exam_password' => $user->exam_password,
                 'jadwal' => ExamSchedule::forStudent($user)->ordered()->get()->map(fn (ExamSchedule $item) => $item->present()),

@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import {router, useForm} from "@inertiajs/react";
-import {CheckIcon, ExternalLinkIcon, FileIcon, ImageIcon, XIcon} from "lucide-react";
+import {CheckIcon, ExternalLinkIcon, FileIcon, ImageIcon, UserPlusIcon, XIcon} from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import FieldError from "@/components/FieldError";
 import {Button} from "@/components/ui/button";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
@@ -43,12 +44,26 @@ export const ProofButton = ({proof, title})=>{
     )
 }
 
-export const ConfirmPaymentButton = ({payment, size = 'sm', className})=>(
-    <Button size={size} className={className}
-            onClick={() => router.post(`/admin/pembayaran/${payment.id}/terima`, {}, {preserveScroll: true})}>
-        <CheckIcon/> Terima
-    </Button>
-)
+/** Accept a payment. For an applicant this creates their account, so it asks first. */
+export const ConfirmPaymentButton = ({payment, size = 'sm', className})=>{
+
+    const confirm = () => router.post(`/admin/pembayaran/${payment.id}/terima`, {}, {preserveScroll: true})
+
+    if (!payment.applicant) {
+        return <Button size={size} className={className} onClick={confirm}><CheckIcon/> Terima</Button>
+    }
+
+    return (
+        <ConfirmDialog
+            title={`Terima pembayaran ${payment.applicant.name}?`}
+            description="Akun siswa dibuat dengan password acak. Setelah ini kartu login tampil untuk dicetak atau dikirim lewat WhatsApp; siswa juga bisa melihatnya dengan kode pengajuan."
+            confirmLabel="Terima & buat akun"
+            onConfirm={confirm}
+        >
+            <Button size={size} className={className}><UserPlusIcon/> Terima & buat akun</Button>
+        </ConfirmDialog>
+    )
+}
 
 /** Reject a payment with a reason the student sees. */
 export const RejectPaymentButton = ({payment, studentName, size = 'sm', className})=>{
@@ -75,7 +90,7 @@ export const RejectPaymentButton = ({payment, studentName, size = 'sm', classNam
                     <form onSubmit={submit} className="grid gap-4">
                         <DialogHeader>
                             <DialogTitle className="font-serif text-xl">Tolak pembayaran {studentName}?</DialogTitle>
-                            <DialogDescription>Siswa akan melihat alasan ini dan diminta mengunggah bukti baru.</DialogDescription>
+                            <DialogDescription>Alasan ini terlihat di halaman status pendaftarannya, tempat bukti baru bisa dikirim.</DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-2">
                             <Label htmlFor={`reject-note-${payment.id}`}>Alasan</Label>

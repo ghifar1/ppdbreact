@@ -1,7 +1,8 @@
 import React from "react";
 import {Head, Link, useForm} from "@inertiajs/react";
-import {BanknoteIcon, CalendarClockIcon, CalendarX2Icon, UserPlusIcon} from "lucide-react";
+import {CalendarClockIcon, CalendarX2Icon, SendIcon, UserPlusIcon} from "lucide-react";
 import AuthLayout from "../../Layouts/AuthLayout";
+import BankAccount from "@/components/BankAccount";
 import FieldError from "@/components/FieldError";
 import PasswordInput from "@/components/PasswordInput";
 import PeriodList from "@/components/PeriodList";
@@ -12,10 +13,10 @@ import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
 import {cn} from "@/lib/utils";
 import {jenjangStyle} from "@/lib/jenjang";
 
-const Field = ({id, label, error, hint, className, children})=>(
+const Field = ({id, label, error, hint, className, optional = false, children})=>(
     <div className={cn("grid content-start gap-2", className)}>
         <Label htmlFor={id}>
-            <span>{label}<span className="ml-0.5 font-bold text-destructive">*</span></span>
+            <span>{label}{optional ? <span className="ml-1 font-normal text-muted-foreground">(opsional)</span> : <span className="ml-0.5 font-bold text-destructive">*</span>}</span>
         </Label>
         {children}
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
@@ -61,33 +62,54 @@ const Closed = ({pendaftaran})=>{
     )
 }
 
-const Register = ({jenjangOptions, jenjang, pendaftaran})=>{
+const Register = ({jenjangOptions, jenjang, pendaftaran, rekening})=>{
 
     if (!jenjangOptions.some(option => pendaftaran.jenjang[option.value].open)) {
         return <Closed pendaftaran={pendaftaran}/>
     }
 
-    return <RegisterForm jenjangOptions={jenjangOptions} jenjang={jenjang} pendaftaran={pendaftaran}/>
+    return <RegisterForm jenjangOptions={jenjangOptions} jenjang={jenjang} pendaftaran={pendaftaran} rekening={rekening}/>
 }
 
-const RegisterForm = ({jenjangOptions, jenjang, pendaftaran})=>{
+const ACCOUNT_FIELDS = ['jenjang', 'name', 'username', 'no_hp', 'password', 'password_confirmation']
+const PAYMENT_FIELDS = ['jenjang', 'name', 'no_hp', 'email', 'sender_name', 'proof']
+
+const pick = (data, keys) => Object.fromEntries(keys.map(key => [key, data[key]]))
+
+/**
+ * Without a fee the applicant creates an account straight away. With a fee
+ * they send a transfer proof instead, and the committee creates the account
+ * after checking it (as in ppdb2020).
+ */
+const RegisterForm = ({jenjangOptions, jenjang, pendaftaran, rekening})=>{
 
     const form = useForm({
         jenjang: jenjang,
         name: '',
         username: '',
         no_hp: '',
+        email: '',
         password: '',
         password_confirmation: '',
+        sender_name: '',
+        proof: null,
     })
+
+    const selected = form.data.jenjang ? pendaftaran.jenjang[form.data.jenjang] : null
+    const withPayment = !!selected?.fee_label
 
     function submit(e)
     {
         e.preventDefault()
-        form.post('/register', {onFinish: () => form.reset('password', 'password_confirmation')})
-    }
 
-    const selected = form.data.jenjang ? pendaftaran.jenjang[form.data.jenjang] : null
+        if (withPayment) {
+            form.transform(data => pick(data, PAYMENT_FIELDS))
+            form.post('/pengajuan')
+        } else {
+            form.transform(data => pick(data, ACCOUNT_FIELDS))
+            form.post('/register', {onFinish: () => form.reset('password', 'password_confirmation')})
+        }
+    }
 
     const input = (key, props = {}) => (
         <Input id={key} value={form.data[key]} aria-invalid={form.errors[key] ? true : undefined} className="h-10"
@@ -98,9 +120,13 @@ const RegisterForm = ({jenjangOptions, jenjang, pendaftaran})=>{
         <>
             <Head title="Daftar"/>
             <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">Pendaftaran siswa baru</p>
-            <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight">Buat akun pendaftaran</h1>
+            <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight">
+                {withPayment ? 'Daftar & kirim bukti pembayaran' : 'Buat akun pendaftaran'}
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-                Akun ini dipakai untuk mengisi formulir dan memantau hasil seleksi.
+                {withPayment
+                    ? 'Transfer biaya pendaftaran, lalu kirim buktinya di sini. Panitia memeriksa pembayaranmu dan membuatkan akun untuk mengisi formulir.'
+                    : 'Akun ini dipakai untuk mengisi formulir dan memantau hasil seleksi.'}
             </p>
 
             <form className="mt-8 grid gap-5" onSubmit={submit}>
@@ -139,30 +165,57 @@ const RegisterForm = ({jenjangOptions, jenjang, pendaftaran})=>{
                     <FieldError message={form.errors.jenjang}/>
                 </fieldset>
 
+                {withPayment && selected.open && <BankAccount feeLabel={selected.fee_label} rekening={rekening[form.data.jenjang]}/>}
+
                 <Field id="name" label="Nama lengkap calon siswa" error={form.errors.name}>
                     {input('name', {autoComplete: 'name'})}
                 </Field>
-                <div className="grid gap-5 sm:grid-cols-2">
-                    <Field id="username" label="Username" error={form.errors.username}
-                           hint="Huruf, angka, - atau _, minimal 4 karakter.">
-                        {input('username', {autoComplete: 'username'})}
-                    </Field>
-                    <Field id="no_hp" label="No. HP / WhatsApp" error={form.errors.no_hp}>
-                        {input('no_hp', {type: 'tel', autoComplete: 'tel', placeholder: '08xxxxxxxxxx'})}
-                    </Field>
-                </div>
-                <div className="grid gap-5 sm:grid-cols-2">
-                    <Field id="password" label="Password" error={form.errors.password} hint="Minimal 8 karakter.">
-                        <PasswordInput id="password" autoComplete="new-password" className="h-10" value={form.data.password}
-                                       aria-invalid={form.errors.password ? true : undefined}
-                                       onChange={e => form.setData('password', e.target.value)}/>
-                    </Field>
-                    <Field id="password_confirmation" label="Ulangi password" error={form.errors.password_confirmation}>
-                        <PasswordInput id="password_confirmation" autoComplete="new-password" className="h-10"
-                                       value={form.data.password_confirmation}
-                                       onChange={e => form.setData('password_confirmation', e.target.value)}/>
-                    </Field>
-                </div>
+                {withPayment ? (
+                    <>
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <Field id="no_hp" label="No. WhatsApp" error={form.errors.no_hp}
+                                   hint="Panitia menghubungi lewat nomor ini.">
+                                {input('no_hp', {type: 'tel', autoComplete: 'tel', placeholder: '08xxxxxxxxxx'})}
+                            </Field>
+                            <Field id="email" label="Email" optional error={form.errors.email}>
+                                {input('email', {type: 'email', autoComplete: 'email'})}
+                            </Field>
+                        </div>
+                        <Field id="sender_name" label="Nama pengirim transfer" error={form.errors.sender_name}>
+                            {input('sender_name', {placeholder: 'Nama pemilik rekening yang mentransfer'})}
+                        </Field>
+                        <Field id="proof" label="Bukti pembayaran" error={form.errors.proof}
+                               hint="Foto atau tangkapan layar bukti transfer (JPG, PNG atau PDF, maksimal 2 MB).">
+                            <Input id="proof" type="file" accept=".jpg,.jpeg,.png,.pdf" className="h-10"
+                                   aria-invalid={form.errors.proof ? true : undefined}
+                                   onChange={e => form.setData('proof', e.target.files[0] ?? null)}/>
+                        </Field>
+                    </>
+                ) : (
+                    <>
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <Field id="username" label="Username" error={form.errors.username}
+                                   hint="Huruf, angka, - atau _, minimal 4 karakter.">
+                                {input('username', {autoComplete: 'username'})}
+                            </Field>
+                            <Field id="no_hp" label="No. HP / WhatsApp" error={form.errors.no_hp}>
+                                {input('no_hp', {type: 'tel', autoComplete: 'tel', placeholder: '08xxxxxxxxxx'})}
+                            </Field>
+                        </div>
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <Field id="password" label="Password" error={form.errors.password} hint="Minimal 8 karakter.">
+                                <PasswordInput id="password" autoComplete="new-password" className="h-10" value={form.data.password}
+                                               aria-invalid={form.errors.password ? true : undefined}
+                                               onChange={e => form.setData('password', e.target.value)}/>
+                            </Field>
+                            <Field id="password_confirmation" label="Ulangi password" error={form.errors.password_confirmation}>
+                                <PasswordInput id="password_confirmation" autoComplete="new-password" className="h-10"
+                                               value={form.data.password_confirmation}
+                                               onChange={e => form.setData('password_confirmation', e.target.value)}/>
+                            </Field>
+                        </div>
+                    </>
+                )}
 
                 {selected?.restricted && (
                     <div className={cn("flex items-start gap-3 rounded-xl border px-4 py-3 text-sm",
@@ -178,20 +231,22 @@ const RegisterForm = ({jenjangOptions, jenjang, pendaftaran})=>{
                     </div>
                 )}
 
-                {selected?.open && selected.fee_label && (
-                    <div className="flex items-start gap-3 rounded-xl border border-gold/40 bg-gold-soft/60 px-4 py-3 text-sm text-gold-foreground dark:text-gold">
-                        <BanknoteIcon className="mt-0.5 size-4 shrink-0"/>
-                        <p>Biaya pendaftaran <b>{selected.fee_label}</b>. Cara pembayaran dan unggah bukti transfer ada di dashboard setelah akun dibuat.</p>
-                    </div>
-                )}
-
                 <Button type="submit" size="lg" className="mt-1 h-11" disabled={form.processing || (selected && !selected.open)}>
-                    <UserPlusIcon/> {form.processing ? 'Memproses…' : 'Buat akun'}
+                    {withPayment ? <SendIcon/> : <UserPlusIcon/>}
+                    {form.processing ? 'Memproses…' : withPayment ? 'Kirim bukti pembayaran' : 'Buat akun'}
                 </Button>
+                {form.progress && (
+                    <progress value={form.progress.percentage} max="100" className="h-1.5 w-full overflow-hidden rounded-full accent-primary">
+                        {form.progress.percentage}%
+                    </progress>
+                )}
             </form>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
                 Sudah punya akun? <Link href="/login" className="font-semibold text-primary hover:underline">Masuk</Link>
+                {pendaftaran.anyFee && (
+                    <><br/>Sudah mengirim bukti pembayaran? <Link href="/cek-pendaftaran" className="font-semibold text-primary hover:underline">Cek status pendaftaran</Link></>
+                )}
             </p>
         </>
     )

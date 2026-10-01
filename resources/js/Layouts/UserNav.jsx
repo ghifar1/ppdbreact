@@ -5,8 +5,8 @@ import AppLayout from "./AppLayout";
 
 const paymentBadges = {
     belum: {label: 'Belum', tone: 'todo'},
-    menunggu: {label: 'Dicek', tone: 'todo'},
-    ditolak: {label: 'Ditolak', tone: 'todo'},
+    menunggu: {label: 'Belum', tone: 'todo'},
+    ditolak: {label: 'Belum', tone: 'todo'},
     diterima: {label: 'Lunas', tone: 'done'},
 }
 

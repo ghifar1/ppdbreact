@@ -63,6 +63,7 @@ const Login = ()=>{
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
                 Belum punya akun? <Link href="/register" className="font-semibold text-primary hover:underline">Daftar sekarang</Link>
+                <br/>Sudah mengirim bukti pembayaran? <Link href="/cek-pendaftaran" className="font-semibold text-primary hover:underline">Cek status pendaftaran</Link>
             </p>
 
             <div className="mt-8 flex gap-3 rounded-xl border border-gold/40 bg-gold-soft p-4 text-sm">

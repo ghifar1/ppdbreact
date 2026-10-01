@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\Jenjang;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Admission;
 use App\Services\RegistrationSchedule;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Validator;
@@ -49,6 +50,9 @@ class RegisterController extends Controller
             'jenjangOptions' => Jenjang::options(),
             'jenjang' => Jenjang::tryFrom((string) request('jenjang'))?->value ?? '',
             'pendaftaran' => $this->schedule()->summary(),
+            'rekening' => collect(Jenjang::cases())->mapWithKeys(fn (Jenjang $jenjang) => [
+                $jenjang->value => app(Admission::class)->bankAccount($jenjang),
+            ]),
         ]);
     }
 
@@ -63,8 +67,13 @@ class RegisterController extends Controller
             'jenjang' => ['required', Rule::enum(Jenjang::class), function (string $attribute, mixed $value, \Closure $fail) {
                 $jenjang = Jenjang::tryFrom((string) $value);
 
-                if ($jenjang && ! $this->schedule()->for($jenjang)['open']) {
+                $status = $jenjang ? $this->schedule()->for($jenjang) : null;
+
+                if ($status && ! $status['open']) {
                     $fail("Pendaftaran {$jenjang->label()} sedang ditutup.");
+                } elseif ($status && app(Admission::class)->feeForNewRegistrant($jenjang, $status['current']) > 0) {
+                    // Accounts for a jenjang with a fee are made by the committee after the payment.
+                    $fail("Pendaftaran {$jenjang->label()} dilakukan dengan mengirim bukti pembayaran.");
                 }
             }],
             'name' => ['required', 'string', 'max:255'],

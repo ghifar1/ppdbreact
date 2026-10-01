@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentProofController;
+use App\Http\Controllers\RegistrationPaymentController;
 use App\Http\Controllers\Student;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,13 @@ Route::get('/help', [WelcomeController::class, 'help']);
 Route::get('/reg', fn () => redirect()->route('register', request()->only('jenjang')));
 
 Auth::routes(['reset' => false, 'confirm' => false, 'verify' => false]);
+
+// Registration with a fee: the proof is sent before an account exists.
+Route::post('/pengajuan', [RegistrationPaymentController::class, 'store'])->middleware(['guest', 'throttle:10,1'])->name('pengajuan.store');
+Route::get('/pengajuan/{payment:code}', [RegistrationPaymentController::class, 'show'])->middleware('throttle:60,1')->name('pengajuan.show');
+Route::post('/pengajuan/{payment:code}', [RegistrationPaymentController::class, 'update'])->middleware('throttle:10,1')->name('pengajuan.update');
+Route::get('/cek-pendaftaran', [RegistrationPaymentController::class, 'lookup'])->name('pengajuan.lookup');
+Route::post('/cek-pendaftaran', [RegistrationPaymentController::class, 'find'])->middleware('throttle:20,1')->name('pengajuan.find');
 
 Route::middleware('auth')->group(function () {
     Route::get('/home', HomeController::class)->name('home');
@@ -27,7 +35,6 @@ Route::middleware(['auth', 'role:student'])->group(function () {
     Route::get('/kartu', [Student\DashboardController::class, 'card'])->name('kartu');
     Route::get('/kelulusan', [Student\DashboardController::class, 'letter'])->name('kelulusan');
     Route::get('/pembayaran', [Student\PaymentController::class, 'show'])->name('pembayaran');
-    Route::post('/pembayaran', [Student\PaymentController::class, 'store'])->name('pembayaran.store');
     Route::get('/formulir/{menu}', [Student\FormController::class, 'show'])->name('formulir.show');
     Route::post('/formulir/{menu}', [Student\FormController::class, 'update'])->name('formulir.update');
 });
@@ -63,7 +70,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/pembayaran', [Admin\PaymentController::class, 'index'])->name('payments.index');
     Route::post('/pembayaran/{payment}/terima', [Admin\PaymentController::class, 'confirm'])->name('payments.confirm');
     Route::post('/pembayaran/{payment}/tolak', [Admin\PaymentController::class, 'reject'])->name('payments.reject');
-    Route::post('/siswa/{student}/pembayaran', [Admin\PaymentController::class, 'recordCash'])->name('payments.cash');
+    Route::post('/siswa/{student}/pembayaran', [Admin\PaymentController::class, 'record'])->name('payments.record');
 
     Route::get('/akun-ujian', [Admin\ExamAccountController::class, 'index'])->name('exam.index');
     Route::post('/akun-ujian', [Admin\ExamAccountController::class, 'generate'])->name('exam.generate');

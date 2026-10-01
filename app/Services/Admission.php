@@ -66,12 +66,20 @@ final class Admission
     }
 
     /**
-     * A proof has been sent (and not rejected), or there is nothing to pay.
+     * Where to pay the jenjang's fee, as shown to applicants and students.
+     *
+     * @return array{bank: ?string, nomor: ?string, nama: ?string, catatan: ?string}
      */
-    public function paymentSubmitted(User $user): bool
+    public function bankAccount(?Jenjang $jenjang): array
     {
-        return ! $this->paymentRequired($user)
-            || in_array($user->payment?->status, [PaymentStatus::Menunggu, PaymentStatus::Diterima], true);
+        $settings = $this->settings($jenjang);
+
+        return [
+            'bank' => $settings->bank_name,
+            'nomor' => $settings->account_number,
+            'nama' => $settings->account_name,
+            'catatan' => $settings->payment_notes,
+        ];
     }
 
     /**
@@ -87,8 +95,8 @@ final class Admission
             return 'Lengkapi semua isian wajib (*) di setiap menu sebelum finalisasi.';
         }
 
-        if (! $this->paymentSubmitted($user)) {
-            return 'Unggah bukti pembayaran biaya pendaftaran sebelum finalisasi.';
+        if (! $this->isPaid($user)) {
+            return 'Biaya pendaftaran belum lunas. Selesaikan pembayaran di sekolah atau hubungi panitia PPDB.';
         }
 
         // Corrections the committee asked for can be sent back at any time.

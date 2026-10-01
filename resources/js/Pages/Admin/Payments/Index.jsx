@@ -13,6 +13,34 @@ import {cn, initials} from "@/lib/utils";
 
 const ALL = 'semua'
 
+const name = payment => payment.student?.name ?? payment.applicant?.name
+
+/** The student, or the applicant who has no account yet. */
+const PaymentPerson = ({payment})=>{
+
+    const person = payment.student ?? payment.applicant
+    const inner = (
+        <>
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary">
+                {initials(person.name)}
+            </span>
+            <span className="min-w-0">
+                <span className={cn("block truncate font-semibold", payment.student && "hover:text-primary hover:underline")}>{person.name}</span>
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <JenjangBadge jenjang={person.jenjang}>{person.jenjang_label}</JenjangBadge>
+                    {payment.student
+                        ? <span className="font-mono">{payment.student.nomor_pendaftaran}</span>
+                        : <span>Calon siswa, belum punya akun</span>}
+                </span>
+            </span>
+        </>
+    )
+
+    return payment.student
+        ? <Link href={`/admin/siswa/${payment.student.id}`} className="flex min-w-0 items-center gap-3">{inner}</Link>
+        : <div className="flex min-w-0 items-center gap-3">{inner}</div>
+}
+
 const Index = ({payments, filters, counts, statusOptions, jenjangOptions})=>{
 
     const [q, setQ] = useState(filters.q)
@@ -28,7 +56,7 @@ const Index = ({payments, filters, counts, statusOptions, jenjangOptions})=>{
             <PageHeader
                 eyebrow="Pengelolaan"
                 title="Pembayaran"
-                description="Periksa bukti transfer biaya pendaftaran. Siswa hanya bisa diverifikasi setelah pembayarannya lunas."
+                description="Calon siswa mengirim bukti transfer saat mendaftar. Terima pembayarannya untuk membuat akun mereka, atau tolak dengan alasan yang mereka lihat di halaman status pendaftaran."
             />
 
             <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Status pembayaran">
@@ -52,7 +80,7 @@ const Index = ({payments, filters, counts, statusOptions, jenjangOptions})=>{
                 <div className="flex flex-col gap-2 border-b bg-muted/40 p-4 md:flex-row">
                     <form className="relative flex-1" onSubmit={e => { e.preventDefault(); apply({}) }}>
                         <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"/>
-                        <Input placeholder="Cari nama atau username, lalu tekan Enter" value={q} className="bg-background pl-9"
+                        <Input placeholder="Cari nama, username atau kode pengajuan, lalu tekan Enter" value={q} className="bg-background pl-9"
                                aria-label="Cari siswa" onChange={e => setQ(e.target.value)}/>
                     </form>
                     <Select value={filters.jenjang || ALL} onValueChange={value => apply({jenjang: value === ALL ? '' : value})}>
@@ -75,24 +103,13 @@ const Index = ({payments, filters, counts, statusOptions, jenjangOptions})=>{
                     {payments.data.map(payment => (
                         <li key={payment.id} className="grid gap-3 px-4 py-4 sm:px-6">
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                                <Link href={`/admin/siswa/${payment.student.id}`} className="flex min-w-0 items-center gap-3">
-                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary">
-                                        {initials(payment.student.name)}
-                                    </span>
-                                    <span className="min-w-0">
-                                        <span className="block truncate font-semibold hover:text-primary hover:underline">{payment.student.name}</span>
-                                        <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <JenjangBadge jenjang={payment.student.jenjang}>{payment.student.jenjang_label}</JenjangBadge>
-                                            <span className="font-mono">{payment.student.nomor_pendaftaran}</span>
-                                        </span>
-                                    </span>
-                                </Link>
+                                <PaymentPerson payment={payment}/>
                                 <div className="flex flex-wrap items-center gap-2">
                                     <PaymentStatusBadge status={payment.status} label={payment.status_label}/>
-                                    <ProofButton proof={payment.proof} title={payment.student.name}/>
+                                    <ProofButton proof={payment.proof} title={name(payment)}/>
                                     {payment.status !== 'diterima' && <ConfirmPaymentButton payment={payment}/>}
                                     {payment.status !== 'ditolak' && payment.method === 'transfer' && (
-                                        <RejectPaymentButton payment={payment} studentName={payment.student.name}/>
+                                        <RejectPaymentButton payment={payment} studentName={name(payment)}/>
                                     )}
                                 </div>
                             </div>
@@ -102,6 +119,14 @@ const Index = ({payments, filters, counts, statusOptions, jenjangOptions})=>{
                                 <div className="min-w-0"><dt className="text-xs text-muted-foreground">Pengirim</dt><dd className="truncate">{payment.sender_name || '-'}</dd></div>
                                 <div><dt className="text-xs text-muted-foreground">{payment.status === 'menunggu' ? 'Dikirim' : 'Diperiksa'}</dt>
                                     <dd>{(payment.status === 'menunggu' ? payment.submitted_at : payment.reviewed_at) || '-'}{payment.status !== 'menunggu' && payment.reviewer && ` · ${payment.reviewer}`}</dd></div>
+                                {payment.applicant && (
+                                    <div className="col-span-full flex flex-wrap gap-x-6 gap-y-1 border-t pt-2">
+                                        <span><span className="text-xs text-muted-foreground">WhatsApp </span>{payment.applicant.phone}</span>
+                                        {payment.applicant.email && <span><span className="text-xs text-muted-foreground">Email </span>{payment.applicant.email}</span>}
+                                        {payment.applicant.gelombang && <span><span className="text-xs text-muted-foreground">Gelombang </span>{payment.applicant.gelombang}</span>}
+                                        <span><span className="text-xs text-muted-foreground">Kode </span><span className="font-mono">{payment.code}</span></span>
+                                    </div>
+                                )}
                                 {payment.note && (
                                     <div className="col-span-full"><dt className="text-xs text-muted-foreground">Catatan</dt><dd className="whitespace-pre-line">{payment.note}</dd></div>
                                 )}

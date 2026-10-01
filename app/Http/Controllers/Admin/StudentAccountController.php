@@ -10,10 +10,10 @@ use App\Models\RegistrationPeriod;
 use App\Models\User;
 use App\Services\Admission;
 use App\Services\RegistrationSchedule;
+use App\Services\StudentAccounts;
 use App\Support\ReadableCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -44,7 +44,7 @@ class StudentAccountController extends Controller
         ]);
     }
 
-    public function store(Request $request, Admission $admission, RegistrationSchedule $schedule): RedirectResponse
+    public function store(Request $request, Admission $admission, RegistrationSchedule $schedule, StudentAccounts $accounts): RedirectResponse
     {
         $data = $request->validate([
             'jenjang' => ['required', Rule::enum(Jenjang::class)],
@@ -64,20 +64,14 @@ class StudentAccountController extends Controller
             return back()->withErrors(['registration_period_id' => "{$period->name} bukan gelombang untuk {$jenjang->label()}."]);
         }
 
-        $password = ReadableCode::generate();
-        $student = new User([
-            'jenjang' => $jenjang,
-            'name' => $data['name'],
-            'username' => $data['username'] ?? $this->username($data['name']),
-            'no_hp' => $data['no_hp'] ?? null,
-            'password' => $password,
-        ]);
-        $student->registration_period_id = $period?->id;
-        $student->save();
+        [$student, $password] = $accounts->create(
+            $jenjang, $data['name'], $data['no_hp'] ?? null, period: $period, username: $data['username'] ?? null,
+        );
 
         if ($request->boolean('paid_cash')) {
             $student->payment()->create([
                 'amount' => $admission->fee($student),
+                'jenjang' => $jenjang,
                 'method' => Payment::METHOD_CASH,
                 'status' => PaymentStatus::Diterima,
                 'submitted_at' => now(),
@@ -95,11 +89,12 @@ class StudentAccountController extends Controller
      * The login card. The password is only known right after it was made,
      * so the card can be printed once; afterwards a new password is needed.
      */
-    public function loginCard(Request $request, User $student): Response
+    public function loginCard(Request $request, User $student, StudentAccounts $accounts): Response
     {
         abort_if($student->isAdmin(), 404);
 
         $card = $request->session()->get('loginCard');
+        $password = ($card['student'] ?? null) === $student->id ? $card['password'] : null;
 
         return Inertia::render('Admin/Students/LoginCard', [
             'student' => [
@@ -111,7 +106,8 @@ class StudentAccountController extends Controller
                 'jenjang_kode' => $student->jenjang?->value,
                 'gelombang' => $student->registrationPeriod?->name,
             ],
-            'password' => ($card['student'] ?? null) === $student->id ? $card['password'] : null,
+            'password' => $password,
+            'whatsapp' => $password ? $accounts->whatsappLink($student, $password) : null,
         ]);
     }
 
@@ -124,22 +120,11 @@ class StudentAccountController extends Controller
 
         $password = ReadableCode::generate();
         $student->forceFill(['password' => $password])->save();
+        // The first password, shown on the registration status page, no longer works.
+        $student->payment()->update(['account_password' => null]);
 
         return redirect()->route('admin.students.login-card', $student)
             ->with('loginCard', ['student' => $student->id, 'password' => $password])
             ->with('success', "Password baru untuk {$student->name} dibuat. Password lama tidak berlaku lagi.");
-    }
-
-    private function username(string $name): string
-    {
-        $base = Str::of($name)->ascii()->lower()->replaceMatches('/[^a-z0-9]+/', '_')->trim('_')->limit(24, '')->value();
-        $base = strlen($base) >= 4 ? $base : 'siswa_'.$base;
-        $username = rtrim($base, '_');
-
-        for ($i = 2; User::where('username', $username)->exists(); $i++) {
-            $username = "{$base}{$i}";
-        }
-
-        return $username;
     }
 }

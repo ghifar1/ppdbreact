@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -56,6 +58,17 @@ class LoginController extends Controller
         $field = str_contains($login, '@') ? 'email' : 'username';
 
         return [$field => $login, 'password' => $request->input('password')];
+    }
+
+    /**
+     * The first password, shown on the registration status page until now,
+     * is not needed there any more.
+     *
+     * @param  User  $user
+     */
+    protected function authenticated(Request $request, $user)
+    {
+        Payment::where('user_id', $user->id)->whereNotNull('account_password')->update(['account_password' => null]);
     }
 
     /**

@@ -172,6 +172,7 @@ class StudentController extends Controller
         ]);
 
         $student->forceFill(['password' => $data['password']])->save();
+        $student->payment()->update(['account_password' => null]);
 
         return back()->with('success', "Kata sandi {$student->name} berhasil diganti.");
     }

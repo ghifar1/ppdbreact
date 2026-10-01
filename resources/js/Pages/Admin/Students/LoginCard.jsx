@@ -1,6 +1,6 @@
 import React from "react";
 import {router, usePage} from "@inertiajs/react";
-import {KeyRoundIcon, PrinterIcon} from "lucide-react";
+import {KeyRoundIcon, MessageCircleIcon, PrinterIcon} from "lucide-react";
 import AdminNav from "../../../Layouts/AdminNav";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
@@ -28,7 +28,7 @@ const NewPasswordButton = ({student, label = 'Buat password baru'})=>(
 )
 
 /** Printable username and password for a student, shown once after the password is made. */
-const LoginCard = ({student, password})=>{
+const LoginCard = ({student, password, whatsapp})=>{
 
     const {sekolah} = usePage().props
 
@@ -41,7 +41,16 @@ const LoginCard = ({student, password})=>{
                 description={password
                     ? 'Cetak sekarang: password hanya ditampilkan sekali dan tidak tersimpan dalam bentuk yang bisa dibaca.'
                     : 'Password siswa tidak tersimpan dalam bentuk yang bisa dibaca, jadi kartu login hanya bisa dicetak bersama password baru.'}
-                actions={password && <Button onClick={() => window.print()} size="lg"><PrinterIcon/> Cetak kartu</Button>}
+                actions={password && (
+                    <>
+                        {whatsapp && (
+                            <Button asChild variant="outline" size="lg">
+                                <a href={whatsapp} target="_blank" rel="noreferrer"><MessageCircleIcon/> Kirim lewat WhatsApp</a>
+                            </Button>
+                        )}
+                        <Button onClick={() => window.print()} size="lg"><PrinterIcon/> Cetak kartu</Button>
+                    </>
+                )}
             />
 
             {!password ? (

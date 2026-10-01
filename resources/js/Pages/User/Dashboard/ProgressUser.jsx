@@ -13,9 +13,9 @@ function stepsFor(profil, dataLengkap, pembayaran)
     return [
         ...(pembayaran ? [{
             key: 'pembayaran', title: 'Pembayaran', done: pembayaran.status === 'diterima',
-            text: pembayaran.status === 'menunggu'
-                ? 'Bukti pembayaran sedang diperiksa panitia.'
-                : `Bayar biaya pendaftaran ${pembayaran.fee_label} dan unggah bukti transfer.`,
+            text: pembayaran.status === 'diterima'
+                ? `Biaya pendaftaran ${pembayaran.fee_label} lunas.`
+                : `Bayar biaya pendaftaran ${pembayaran.fee_label} di sekolah atau konfirmasikan transfer ke panitia.`,
         }] : []),
         {key: 'pengisian', title: 'Pengisian data', text: 'Isi semua formulir di menu samping.',
             done: dataLengkap || submitted.includes(profil.status)},

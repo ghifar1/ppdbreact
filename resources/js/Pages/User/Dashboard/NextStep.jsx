@@ -35,30 +35,21 @@ const LinkButton = ({href, icon: Icon, children, variant = 'gold'})=>(
     </Button>
 )
 
-/** Asks for the registration fee when it is unpaid or the proof was rejected. */
+/** Asks for the registration fee while it is unpaid (e.g. registered at the school without paying). */
 function paymentStep(pembayaran)
 {
-    if (pembayaran?.status === 'ditolak') {
-        return {
-            tone: 'warning',
-            icon: BanknoteIcon,
-            title: 'Bukti pembayaran ditolak',
-            text: 'Unggah ulang bukti pembayaran yang benar agar datamu bisa diverifikasi.',
-            note: pembayaran.note,
-            action: <LinkButton href="/pembayaran" icon={BanknoteIcon}>Unggah ulang bukti</LinkButton>,
-        }
+    if (!pembayaran || pembayaran.status === 'diterima') {
+        return null
     }
 
-    if (pembayaran?.status === 'belum') {
-        return {
-            icon: BanknoteIcon,
-            title: `Bayar biaya pendaftaran ${pembayaran.fee_label}`,
-            text: 'Transfer biaya pendaftaran lalu unggah buktinya. Sambil menunggu konfirmasi panitia, kamu tetap bisa mengisi formulir.',
-            action: <LinkButton href="/pembayaran" icon={BanknoteIcon}>Lihat cara pembayaran</LinkButton>,
-        }
+    return {
+        tone: pembayaran.status === 'ditolak' ? 'warning' : 'brand',
+        icon: BanknoteIcon,
+        title: `Biaya pendaftaran ${pembayaran.fee_label} belum lunas`,
+        text: 'Bayar di sekolah, atau tunjukkan bukti transfer kepada panitia. Kamu tetap bisa mengisi formulir, tetapi finalisasi menunggu pembayaran lunas.',
+        note: pembayaran.note,
+        action: <LinkButton href="/pembayaran" icon={BanknoteIcon}>Lihat cara pembayaran</LinkButton>,
     }
-
-    return null
 }
 
 /** Submit for finalization, or why that is not possible yet. */
@@ -94,7 +85,7 @@ function content(props, firstIncomplete)
     switch (profil.status) {
         case 'perlu_perbaikan': {
             const blocker = dataLengkap && props.finalisasi.blocker
-            const needsPayment = ['belum', 'ditolak'].includes(pembayaran?.status)
+            const needsPayment = pembayaran && pembayaran.status !== 'diterima'
             return {
                 tone: 'warning',
                 icon: TriangleAlertIcon,
@@ -102,7 +93,7 @@ function content(props, firstIncomplete)
                 text: blocker || 'Perbaiki data sesuai catatan panitia, lalu ajukan finalisasi kembali.',
                 note: profil.catatan_admin,
                 action: !dataLengkap ? fillForms
-                    : needsPayment ? <LinkButton href="/pembayaran" icon={BanknoteIcon}>Unggah bukti pembayaran</LinkButton>
+                    : needsPayment ? <LinkButton href="/pembayaran" icon={BanknoteIcon}>Lihat cara pembayaran</LinkButton>
                     : blocker ? null : <FinalizeButton/>,
             }
         }
@@ -110,9 +101,7 @@ function content(props, firstIncomplete)
             return paymentStep(pembayaran) ?? {
                 icon: HourglassIcon,
                 title: 'Datamu sedang diperiksa panitia',
-                text: pembayaran?.status === 'menunggu'
-                    ? 'Panitia akan memeriksa datamu dan bukti pembayaranmu. Kartu ujian bisa diunduh setelah data terverifikasi.'
-                    : 'Panitia akan memverifikasi datamu. Kartu ujian bisa diunduh setelah data terverifikasi.',
+                text: 'Panitia akan memverifikasi datamu. Kartu ujian bisa diunduh setelah data terverifikasi.',
             }
         case 'terverifikasi': {
             const announcement = pengumuman ? ` Hasil seleksi diumumkan ${pengumuman}.` : ''

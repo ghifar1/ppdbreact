@@ -369,6 +369,7 @@ final class Importer
         $this->report->statuses[$user->status->value] = ($this->report->statuses[$user->status->value] ?? 0) + 1;
         // ppdb2020 only made accounts after the registration fee was checked.
         $user->payment()->firstOrCreate([], [
+            'jenjang' => $this->jenjang,
             'method' => Payment::METHOD_IMPORT,
             'status' => PaymentStatus::Diterima,
             'note' => 'Akun ppdb2020: dibuat setelah pembayaran diperiksa.',

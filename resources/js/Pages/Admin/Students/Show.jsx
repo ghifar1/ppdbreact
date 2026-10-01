@@ -127,11 +127,11 @@ const ExamAccountCard = ({student})=>{
     )
 }
 
-/** Record a registration fee paid in cash at the school office. */
-const CashPaymentButton = ({student, fee})=>{
+/** Record a registration fee paid at the school, or a transfer the student showed the committee. */
+const RecordPaymentButton = ({student, fee})=>{
 
     const [open, setOpen] = useState(false)
-    const form = useForm({amount: fee ? String(fee) : '', note: ''})
+    const form = useForm({amount: fee ? String(fee) : '', method: 'tunai', note: ''})
 
     function submit(e)
     {
@@ -141,23 +141,36 @@ const CashPaymentButton = ({student, fee})=>{
 
     return (
         <>
-            <Button variant="outline" className="w-full" onClick={() => setOpen(true)}><HandCoinsIcon/> Catat pembayaran tunai</Button>
+            <Button variant="outline" className="w-full" onClick={() => setOpen(true)}><HandCoinsIcon/> Catat pembayaran</Button>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="sm:max-w-md">
                     <form onSubmit={submit} className="grid gap-4">
                         <DialogHeader>
-                            <DialogTitle className="font-serif text-xl">Pembayaran tunai {student.name}</DialogTitle>
-                            <DialogDescription>Untuk siswa yang membayar langsung di sekolah. Pembayaran langsung tercatat lunas.</DialogDescription>
+                            <DialogTitle className="font-serif text-xl">Catat pembayaran {student.name}</DialogTitle>
+                            <DialogDescription>Untuk pembayaran yang sudah diperiksa panitia di luar aplikasi. Pembayaran langsung tercatat lunas.</DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-2">
-                            <Label htmlFor="cash-amount">Jumlah</Label>
-                            <RupiahInput id="cash-amount" value={form.data.amount} aria-invalid={form.errors.amount ? true : undefined}
-                                         onChange={value => form.setData('amount', value)}/>
-                            <FieldError message={form.errors.amount}/>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid content-start gap-2">
+                                <Label htmlFor="pay-amount">Jumlah</Label>
+                                <RupiahInput id="pay-amount" value={form.data.amount} aria-invalid={form.errors.amount ? true : undefined}
+                                             onChange={value => form.setData('amount', value)}/>
+                                <FieldError message={form.errors.amount}/>
+                            </div>
+                            <div className="grid content-start gap-2">
+                                <Label htmlFor="pay-method">Cara bayar</Label>
+                                <Select value={form.data.method} onValueChange={value => form.setData('method', value)}>
+                                    <SelectTrigger id="pay-method" className="w-full"><SelectValue/></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="tunai">Tunai di sekolah</SelectItem>
+                                        <SelectItem value="transfer">Transfer</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FieldError message={form.errors.method}/>
+                            </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="cash-note">Catatan (opsional)</Label>
-                            <Input id="cash-note" value={form.data.note} placeholder="mis. Diterima oleh Bu Siti, kuitansi no. 12"
+                            <Label htmlFor="pay-note">Catatan (opsional)</Label>
+                            <Input id="pay-note" value={form.data.note} placeholder="mis. Kuitansi no. 12, diterima Bu Siti"
                                    onChange={e => form.setData('note', e.target.value)}/>
                             <FieldError message={form.errors.note}/>
                         </div>
@@ -214,7 +227,7 @@ const PaymentCard = ({student, payment})=>{
                 {record?.status === 'diterima' && record.method === 'transfer' && (
                     <RejectPaymentButton payment={record} studentName={student.name} size="default"/>
                 )}
-                {payment.required && record?.status !== 'diterima' && <CashPaymentButton student={student} fee={payment.fee}/>}
+                {payment.required && record?.status !== 'diterima' && <RecordPaymentButton student={student} fee={payment.fee}/>}
             </CardContent>
         </Card>
     )

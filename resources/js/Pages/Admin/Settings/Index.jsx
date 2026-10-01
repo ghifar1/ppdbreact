@@ -73,7 +73,7 @@ const SettingsForm = ({jenjang, initial, others, periodFees})=>{
         <form onSubmit={submit} className="grid gap-6">
             <div className="grid gap-6 xl:grid-cols-2">
                 <Section icon={BanknoteIcon} title="Biaya pendaftaran"
-                         description="Siswa mengunggah bukti transfer, lalu panitia mengonfirmasi. Kosongkan biaya jika pendaftaran gratis.">
+                         description="Dengan biaya, calon siswa mengirim bukti transfer saat mendaftar dan panitia membuat akunnya setelah pembayaran diterima. Kosongkan jika pendaftaran gratis.">
                     <Field id={id('fee')} label="Biaya pendaftaran" error={form.errors.fee}
                            hint={periodFees.length > 0
                                ? `Gelombang dengan biaya sendiri: ${periodFees.map(period => `${period.name} (${period.fee_label})`).join(', ')}.`
@@ -94,7 +94,7 @@ const SettingsForm = ({jenjang, initial, others, periodFees})=>{
                         {text('account_name', {placeholder: 'mis. MA Al-Hikmah'})}
                     </Field>
                     <Field id={id('payment_notes')} label="Keterangan pembayaran" error={form.errors.payment_notes}
-                           hint="Tampil di halaman pembayaran siswa, mis. berita transfer atau pembayaran tunai di sekolah.">
+                           hint="Tampil di halaman Daftar dan halaman pembayaran siswa, mis. berita transfer atau pembayaran tunai di sekolah.">
                         {area('payment_notes', {rows: 3, placeholder: 'Cantumkan nama calon siswa di berita transfer. Bisa juga membayar tunai di ruang TU, Senin–Jumat 08.00–15.00.'})}
                     </Field>
                 </Section>

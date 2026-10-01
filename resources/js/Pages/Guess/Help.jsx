@@ -17,9 +17,14 @@ const details = {
         'Simpan username dan password baik-baik, keduanya dipakai untuk masuk.',
     ],
     bayar: [
-        'Buka menu Pembayaran di dashboard untuk melihat biaya dan nomor rekening.',
-        'Transfer biaya pendaftaran, lalu unggah foto atau tangkapan layar bukti transfernya.',
-        'Panitia memeriksa pembayaranmu. Sambil menunggu, kamu tetap bisa mengisi formulir.',
+        'Buka halaman Daftar dan pilih jenjang. Biaya dan nomor rekening tampil di sana.',
+        'Transfer biaya pendaftaran, lalu isi nama calon siswa, nomor WhatsApp, dan unggah foto bukti transfernya.',
+        'Simpan kode pengajuan yang muncul setelah bukti terkirim.',
+    ],
+    terima: [
+        'Panitia memeriksa pembayaranmu, lalu membuat akun pendaftaran.',
+        'Buka Cek Status Pendaftaran dan masukkan kode pengajuan untuk melihat username dan password akunmu.',
+        'Jika bukti ditolak, alasannya tampil di sana dan kamu bisa mengirim bukti baru.',
     ],
     formulir: [
         'Setelah masuk, menu formulir tampil di samping kiri dashboard.',
@@ -43,6 +48,8 @@ const details = {
 }
 
 const faqs = [
+    ['Saya sudah mengirim bukti pembayaran, kapan akun saya dibuat?',
+        'Setelah panitia memeriksa pembayaranmu. Pantau di halaman Cek Status Pendaftaran dengan kode pengajuanmu; username dan password tampil di sana begitu akunmu dibuat.'],
     ['Saya lupa password, bagaimana cara masuk?',
         'Hubungi panitia PPDB. Panitia dapat mengatur ulang password akunmu, lalu kamu bisa masuk dengan password baru.'],
     ['Apakah data bisa diubah setelah finalisasi?',

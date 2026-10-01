@@ -1,26 +1,34 @@
 import React from "react";
 import UserNav from "../../../Layouts/UserNav";
-import {PageTitle} from "../../../Layouts/PageTitle";
+import PageHeader from "@/components/PageHeader";
+import {FormChecklist} from "./FormChecklist";
+import {NextStep} from "./NextStep";
 import {ProfileCard} from "./ProfileCard";
 import {ProgressUser} from "./ProgressUser";
 
-const profil = {
-    'nama': 'Muhammad Al Ghifari',
-    'status_akun': 'Pengisian Data',
-    'no_hp' : '+6281905101057',
-    'jenis_pendaftaran': 'Offline',
-}
+const Index = (props)=>{
 
-const Index = ()=>{
+    const {profil, dataLengkap, pembayaran, jadwal} = props
 
-    return  (
+    const firstName = profil.nama.split(' ')[0]
+
+    return (
         <>
-            <PageTitle>Dashboard Pendaftaran</PageTitle>
-            <div className="grid gap-6 mb-8 md:grid-cols-2">
-                <div className="w-auto">
-                    <ProfileCard profil={profil}></ProfileCard>
+            <PageHeader
+                headTitle="Dashboard"
+                eyebrow="Dashboard pendaftaran"
+                title={`Assalamu'alaikum, ${firstName}`}
+                description="Pantau kelengkapan data dan status pendaftaranmu di sini."
+            />
+            <div className="grid gap-6 lg:grid-cols-3">
+                <div className="grid content-start gap-6">
+                    <ProfileCard profil={profil} pembayaran={pembayaran}/>
+                    <FormChecklist/>
                 </div>
-                <ProgressUser profil={profil}></ProgressUser>
+                <div className="grid content-start gap-6 lg:col-span-2">
+                    <NextStep {...props}/>
+                    <ProgressUser profil={profil} dataLengkap={dataLengkap} pembayaran={pembayaran} jadwal={jadwal}/>
+                </div>
             </div>
         </>
     )
@@ -29,4 +37,3 @@ const Index = ()=>{
 Index.layout = page => <UserNav>{page}</UserNav>
 
 export default Index
-

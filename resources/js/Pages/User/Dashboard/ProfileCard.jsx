@@ -1,34 +1,73 @@
 import React from 'react'
-import {Card, CardContent} from "@/components/ui/card";
+import {usePage} from "@inertiajs/react";
+import JenjangBadge from "@/components/JenjangBadge";
+import PaymentStatusBadge from "@/components/PaymentStatusBadge";
+import Pattern from "@/components/Pattern";
+import SchoolLogo from "@/components/SchoolLogo";
+import StatusBadge from "@/components/StatusBadge";
+import {initials} from "@/lib/utils";
 
+/** The student's details, styled after a school ID card. */
+export const ProfileCard = ({profil, pembayaran})=>{
 
-export const ProfileCard = ({profil})=>{
+    const {sekolah} = usePage().props
+
     return (
-       <>
-           <Card className="mb-2 shadow-md">
-               <CardContent>
-                   <p className="text-lg">Profil Siswa</p>
-                   <div className="grid grid-cols-3 gap-2">
-                       <img className="rounded-lg" src="https://st4.depositphotos.com/4778169/20535/v/600/depositphotos_205358872-stock-illustration-cute-indonesian-junior-high-school.jpg" alt="Foto siswa"/>
-                       <div className="col-span-2">
-                           <p className="text-lg font-bold">{profil.nama}</p>
-                           <hr className="border my-1"/>
-                           <div className="text-sm">
-                               <div className="grid grid-cols-3">
-                                   <p>Status Akun</p>
-                                   <p className="col-span-2">: {profil.status_akun} </p>
-                                   <p>No. HP</p>
-                                   <p className="col-span-2">: {profil.no_hp} </p>
-                                   <p>Pendaftaran</p>
-                                   <p className="col-span-2">: {profil.jenis_pendaftaran} </p>
-
-                               </div>
-                           </div>
-                       </div>
-                   </div>
-               </CardContent>
-           </Card>
-       </>
+        <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+            <div className="relative overflow-hidden bg-panel px-5 py-4 text-panel-foreground">
+                <Pattern className="text-white/10" size={40}/>
+                <div className="relative flex items-center gap-3">
+                    <SchoolLogo className="h-10 w-9"/>
+                    <div className="min-w-0 leading-tight">
+                        <p className="text-[10px] font-semibold tracking-[0.2em] text-gold uppercase">Kartu Pendaftar</p>
+                        <p className="truncate font-serif font-semibold">{sekolah.nama}</p>
+                    </div>
+                </div>
+            </div>
+            <div className="p-5">
+                <div className="flex items-center gap-4">
+                    <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-secondary font-serif text-2xl font-semibold text-primary ring-2 ring-gold/60">
+                        {initials(profil.nama)}
+                    </div>
+                    <div className="min-w-0">
+                        <p className="truncate text-lg font-semibold">{profil.nama}</p>
+                        <p className="text-sm text-muted-foreground">@{profil.username}</p>
+                        <JenjangBadge jenjang={profil.jenjang_kode} className="mt-1">{profil.jenjang}</JenjangBadge>
+                    </div>
+                </div>
+                <dl className="mt-5 grid gap-3 border-t border-dashed pt-4 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                        <dt className="text-muted-foreground">No. Pendaftaran</dt>
+                        <dd className="font-mono font-semibold">{profil.nomor_pendaftaran}</dd>
+                    </div>
+                    {profil.nomor_peserta && (
+                        <div className="flex items-center justify-between gap-3">
+                            <dt className="text-muted-foreground">No. Peserta</dt>
+                            <dd className="font-mono font-semibold">{profil.nomor_peserta}</dd>
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between gap-3">
+                        <dt className="text-muted-foreground">Status</dt>
+                        <dd><StatusBadge status={profil.status} label={profil.status_label}/></dd>
+                    </div>
+                    {pembayaran && (
+                        <div className="flex items-center justify-between gap-3">
+                            <dt className="text-muted-foreground">Pembayaran</dt>
+                            <dd><PaymentStatusBadge status={pembayaran.status} label={pembayaran.status_label}/></dd>
+                        </div>
+                    )}
+                    {profil.gelombang && (
+                        <div className="flex items-center justify-between gap-3">
+                            <dt className="text-muted-foreground">Gelombang</dt>
+                            <dd className="font-medium">{profil.gelombang}</dd>
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between gap-3">
+                        <dt className="text-muted-foreground">No. HP</dt>
+                        <dd>{profil.no_hp || '-'}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
     )
 }
-

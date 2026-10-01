@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Admission;
 use App\Services\FormService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -37,6 +38,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $student = $user && ! $user->isAdmin() ? $user : null;
 
         return [
             ...parent::share($request),
@@ -48,17 +50,18 @@ class HandleInertiaRequests extends Middleware
                     'isAdmin' => $user->isAdmin(),
                     'jenjang' => $user->jenjang?->shortLabel(),
                     'jenjang_kode' => $user->jenjang?->value,
-                    'status' => $user->status->value,
+                    // Students do not see a result before it is announced.
+                    'status' => ($student ? app(Admission::class)->visibleStatus($student) : $user->status)->value,
                 ] : null,
             ],
             'sekolah' => fn () => [
                 ...config('ppdb.sekolah'),
                 'logo' => config('ppdb.sekolah.logo') ? asset(config('ppdb.sekolah.logo')) : null,
                 'tahun' => config('ppdb.tahun'),
+                'login_url' => route('login'),
             ],
-            'studentMenus' => fn () => $user && ! $user->isAdmin()
-                ? app(FormService::class)->progress($user)
-                : [],
+            'studentMenus' => fn () => $student ? app(FormService::class)->progress($student) : [],
+            'studentNav' => fn () => $student ? app(Admission::class)->navigation($student) : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

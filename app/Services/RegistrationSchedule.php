@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Jenjang;
+use App\Models\Payment;
 use App\Models\RegistrationPeriod;
 use Illuminate\Support\Collection;
 
@@ -51,14 +52,17 @@ final class RegistrationSchedule
      */
     public function summary(): array
     {
-        $jenjang = collect(Jenjang::cases())->mapWithKeys(function (Jenjang $jenjang) {
+        $admission = app(Admission::class);
+        $jenjang = collect(Jenjang::cases())->mapWithKeys(function (Jenjang $jenjang) use ($admission) {
             $status = $this->for($jenjang);
+            $fee = $admission->feeForNewRegistrant($jenjang, $status['current']);
 
             return [$jenjang->value => [
                 'open' => $status['open'],
                 'restricted' => $status['restricted'],
                 'current' => $status['current']?->present(),
                 'next' => $status['next']?->present(),
+                'fee_label' => $fee > 0 ? Payment::rupiah($fee) : null,
             ]];
         });
 
@@ -66,11 +70,29 @@ final class RegistrationSchedule
             'jenjang' => $jenjang,
             'restricted' => $jenjang->contains('restricted', true),
             'anyOpen' => $jenjang->contains(fn (array $status) => $status['restricted'] && $status['open']),
+            'anyFee' => $jenjang->contains(fn (array $status) => $status['fee_label'] !== null),
             'periods' => $this->periods()
                 ->filter(fn (RegistrationPeriod $period) => $period->closes_at->gte(now()->subDays(30)))
                 ->map(fn (RegistrationPeriod $period) => $period->present())
                 ->values(),
         ];
+    }
+
+    /**
+     * Dates of each admission step per jenjang, for the public pages. Uses
+     * the open period, or else the next one.
+     *
+     * @return array<string, array<string, ?string>>
+     */
+    public function timelines(): array
+    {
+        $admission = app(Admission::class);
+
+        return collect(Jenjang::cases())->mapWithKeys(function (Jenjang $jenjang) use ($admission) {
+            $status = $this->for($jenjang);
+
+            return [$jenjang->value => $admission->timeline($jenjang, $status['current'] ?? $status['next'])];
+        })->all();
     }
 
     /**

@@ -4,36 +4,43 @@ import {CalendarDaysIcon, CircleHelpIcon, FileTextIcon, LifeBuoyIcon} from "luci
 import PublicLayout from "../../Layouts/PublicLayout";
 import ArchDivider from "@/components/ArchDivider";
 import Pattern from "@/components/Pattern";
+import JenjangSwitch, {useJadwal} from "@/components/JenjangSwitch";
 import PeriodList from "@/components/PeriodList";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "@/components/ui/accordion";
 import {Button} from "@/components/ui/button";
-import {jadwalItems, steps} from "@/lib/ppdb";
+import {jadwalItems, stepsFor} from "@/lib/ppdb";
 
-const details = [
-    [
+const details = {
+    akun: [
         'Buka halaman Daftar dan pilih jenjang: MI, MTs, atau MA.',
         'Isi nama lengkap calon siswa, username, nomor HP, dan password.',
         'Simpan username dan password baik-baik, keduanya dipakai untuk masuk.',
     ],
-    [
+    bayar: [
+        'Buka menu Pembayaran di dashboard untuk melihat biaya dan nomor rekening.',
+        'Transfer biaya pendaftaran, lalu unggah foto atau tangkapan layar bukti transfernya.',
+        'Panitia memeriksa pembayaranmu. Sambil menunggu, kamu tetap bisa mengisi formulir.',
+    ],
+    formulir: [
         'Setelah masuk, menu formulir tampil di samping kiri dashboard.',
         'Isian bertanda bintang merah (*) wajib diisi.',
         'Klik Simpan di setiap menu. Menu yang sudah lengkap diberi tanda centang.',
     ],
-    [
+    finalisasi: [
         'Periksa kembali seluruh data sebelum mengajukan.',
-        'Klik Ajukan Finalisasi di dashboard. Setelah diajukan, data tidak dapat diubah.',
+        'Klik Ajukan Finalisasi di dashboard sebelum batas waktunya. Setelah diajukan, data tidak dapat diubah.',
         'Jika panitia meminta perbaikan, formulir akan dibuka kembali beserta catatannya.',
     ],
-    [
-        'Setelah data diverifikasi, tombol Kartu Ujian muncul di dashboard.',
+    kartu: [
+        'Setelah data diverifikasi, menu Kartu Ujian muncul di dashboard.',
+        'Kartu berisi nomor peserta, jadwal dan tempat ujian, serta akun untuk sistem ujian.',
         'Cetak kartu ujian dan bawa saat mengikuti seleksi.',
     ],
-    [
-        'Hasil seleksi diumumkan di dashboard akunmu.',
-        'Ikuti informasi daftar ulang dari panitia jika dinyatakan lulus.',
+    pengumuman: [
+        'Hasil seleksi tampil di dashboard pada waktu pengumuman.',
+        'Cetak surat hasil seleksi. Jika lulus, ikuti ketentuan daftar ulang di dalamnya.',
     ],
-]
+}
 
 const faqs = [
     ['Saya lupa password, bagaimana cara masuk?',
@@ -47,12 +54,13 @@ const faqs = [
     ['Apa itu nomor pendaftaran?',
         'Nomor unik yang dibuat otomatis saat akun dibuat, misalnya MTS-2022-00012. Nomor ini tertera di dashboard dan di kartu ujian.'],
     ['Kapan kartu ujian bisa diunduh?',
-        'Setelah panitia memverifikasi datamu. Status di dashboard akan berubah menjadi "Terverifikasi" dan tombol kartu ujian akan muncul.'],
+        'Setelah panitia memverifikasi datamu dan pada masa unduh kartu yang ditentukan panitia. Menu Kartu Ujian akan muncul di dashboard.'],
 ]
 
-const Help = ({jadwal, pendaftaran})=>{
+const Help = ({jadwal, pendaftaran, jenjangOptions})=>{
 
     const {sekolah} = usePage().props
+    const {selected, setSelected, differs, timeline} = useJadwal(jadwal, jenjangOptions)
 
     return (
         <>
@@ -78,7 +86,7 @@ const Help = ({jadwal, pendaftaran})=>{
                         <FileTextIcon className="size-6 text-primary"/> Langkah-langkah
                     </h2>
                     <ol className="mt-6 grid gap-4">
-                        {steps.map((step, i) => (
+                        {stepsFor(pendaftaran?.anyFee).map((step, i) => (
                             <li key={step.title} className="flex gap-4 rounded-2xl border bg-card p-5 shadow-xs">
                                 <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary font-serif text-lg font-semibold text-primary-foreground">
                                     {i + 1}
@@ -86,7 +94,7 @@ const Help = ({jadwal, pendaftaran})=>{
                                 <div>
                                     <h3 className="font-semibold">{step.title}</h3>
                                     <ul className="mt-2 grid list-disc gap-1 pl-5 text-sm text-muted-foreground marker:text-gold">
-                                        {details[i].map(line => <li key={line}>{line}</li>)}
+                                        {details[step.key].map(line => <li key={line}>{line}</li>)}
                                     </ul>
                                 </div>
                             </li>
@@ -117,12 +125,13 @@ const Help = ({jadwal, pendaftaran})=>{
                         <h2 className="flex items-center gap-2 font-serif text-xl font-semibold">
                             <CalendarDaysIcon className="size-5 text-primary"/> Jadwal
                         </h2>
+                        {differs && <JenjangSwitch options={jenjangOptions} value={selected} onChange={setSelected} className="mt-3"/>}
                         <ol className="mt-4 grid gap-4 border-l-2 border-gold/50 pl-5">
                             {jadwalItems.map(item => (
                                 <li key={item.key} className="relative">
                                     <span className="absolute top-1.5 -left-[27px] size-3 rounded-full border-2 border-card bg-gold"/>
                                     <p className="text-sm font-semibold">{item.title}</p>
-                                    <p className="text-sm text-muted-foreground">{jadwal?.[item.key] || 'Menyusul'}</p>
+                                    <p className="text-sm text-muted-foreground">{timeline[item.key] || item.fallback || 'Menyusul'}</p>
                                 </li>
                             ))}
                         </ol>

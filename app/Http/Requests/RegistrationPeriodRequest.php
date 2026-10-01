@@ -21,6 +21,11 @@ class RegistrationPeriodRequest extends FormRequest
         if (in_array($this->input('jenjang'), ['', 'semua'], true)) {
             $this->merge(['jenjang' => null]);
         }
+
+        if (is_string($this->input('fee'))) {
+            $digits = preg_replace('/\D/', '', $this->input('fee'));
+            $this->merge(['fee' => $digits === '' ? null : $digits]);
+        }
     }
 
     /**
@@ -33,6 +38,7 @@ class RegistrationPeriodRequest extends FormRequest
             'jenjang' => ['nullable', Rule::enum(Jenjang::class)],
             'opens_at' => ['required', 'date'],
             'closes_at' => ['required', 'date', 'after:opens_at'],
+            'fee' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'description' => ['nullable', 'string', 'max:1000'],
         ];
     }
@@ -42,7 +48,7 @@ class RegistrationPeriodRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return ['name' => 'nama gelombang'];
+        return ['name' => 'nama gelombang', 'fee' => 'biaya pendaftaran'];
     }
 
     /**
@@ -76,6 +82,6 @@ class RegistrationPeriodRequest extends FormRequest
      */
     public function periodData(): array
     {
-        return $this->safe()->only(['name', 'jenjang', 'opens_at', 'closes_at', 'description']);
+        return $this->safe()->only(['name', 'jenjang', 'opens_at', 'closes_at', 'fee', 'description']) + ['fee' => null];
     }
 }

@@ -3,23 +3,25 @@
 namespace App\Services;
 
 use App\Enums\StatusPendaftaran;
-use App\Models\FormAnswer;
 use App\Models\User;
+use App\Support\ReadableCode;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * Logins for the external exam (e-learning/CBT) system, as ppdb2020 had them:
- * the username is the student's NISN and the password a random code. Both
- * are shown in plain text on the exam card and in the admin export.
+ * What a verified student needs for the exam: a participant number (nomor
+ * peserta), counted per jenjang and registration year, and a login for the
+ * external exam (e-learning/CBT) system as ppdb2020 had it: the username is
+ * the student's NISN and the password a random code. Both are shown in plain
+ * text on the exam card and in the admin export.
  */
 final class ExamAccounts
 {
-    /** No 0/O, 1/I/L, so codes can be read off a printed card. */
-    private const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-
     private const PASSWORD_LENGTH = 10;
+
+    public function __construct(private FormService $forms) {}
 
     /**
      * Students who can sit the exam, i.e. whose data has been verified.
@@ -34,10 +36,13 @@ final class ExamAccounts
     }
 
     /**
-     * Give the student an exam account if they have none. Returns true when one was created.
+     * Give the student a participant number and an exam account if they have
+     * none. Returns true when an account was created.
      */
     public function ensure(User $user): bool
     {
+        $this->assignNumber($user);
+
         if ($user->exam_username !== null) {
             return false;
         }
@@ -48,6 +53,36 @@ final class ExamAccounts
         ])->save();
 
         return true;
+    }
+
+    /**
+     * The next participant number of the student's jenjang and registration year.
+     */
+    public function assignNumber(User $user): void
+    {
+        if ($user->exam_number !== null || $user->jenjang === null) {
+            return;
+        }
+
+        $year = (int) ($user->created_at ?? now())->format('Y');
+
+        // Two admins verifying at the same moment could pick the same number;
+        // the unique index rejects the second, which then takes the next one.
+        for ($attempt = 1; ; $attempt++) {
+            $next = (int) User::where('jenjang', $user->jenjang)->where('exam_year', $year)->max('exam_number') + 1;
+
+            try {
+                $user->forceFill(['exam_number' => $next, 'exam_year' => $year])->save();
+
+                return;
+            } catch (UniqueConstraintViolationException $e) {
+                $user->forceFill(['exam_number' => null, 'exam_year' => null]);
+
+                if ($attempt === 3) {
+                    throw $e;
+                }
+            }
+        }
     }
 
     /**
@@ -69,9 +104,12 @@ final class ExamAccounts
     {
         $created = 0;
 
-        $this->eligible()->whereNull('exam_username')->orderBy('id')->each(function (User $user) use (&$created) {
-            $created += (int) $this->ensure($user);
-        });
+        $this->eligible()
+            ->where(fn (Builder $query) => $query->whereNull('exam_username')->orWhereNull('exam_number'))
+            ->orderBy('id')
+            ->each(function (User $user) use (&$created) {
+                $created += (int) $this->ensure($user);
+            });
 
         return $created;
     }
@@ -82,7 +120,7 @@ final class ExamAccounts
      */
     public function username(User $user): string
     {
-        $nisn = preg_replace('/\s+/', '', (string) ($this->answers(collect([$user]), ['nisn'])->get($user->id)['nisn'] ?? ''));
+        $nisn = preg_replace('/\s+/', '', (string) ($this->forms->keyedAnswers(collect([$user]), ['nisn'])->get($user->id)['nisn'] ?? ''));
 
         $candidates = array_filter([
             preg_match('/^[0-9A-Za-z]{4,50}$/', $nisn) ? $nisn : null,
@@ -100,9 +138,7 @@ final class ExamAccounts
 
     public function password(): string
     {
-        return collect(range(1, self::PASSWORD_LENGTH))
-            ->map(fn () => self::ALPHABET[random_int(0, strlen(self::ALPHABET) - 1)])
-            ->implode('');
+        return ReadableCode::generate(self::PASSWORD_LENGTH);
     }
 
     /**
@@ -114,7 +150,7 @@ final class ExamAccounts
      */
     public function exportRows(Collection $users): array
     {
-        $answers = $this->answers($users, ['nisn', 'nama_sekolah', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir']);
+        $answers = $this->forms->keyedAnswers($users, ['nisn', 'nama_sekolah', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir']);
 
         return $users->map(function (User $user) use ($answers) {
             $data = $answers->get($user->id, []);
@@ -138,23 +174,5 @@ final class ExamAccounts
                 'tanggal_lahir' => preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $birth, $m) ? "{$m[3]}-{$m[2]}-{$m[1]}" : $birth,
             ];
         })->all();
-    }
-
-    /**
-     * Answers of keyed fields, per user: [user_id => [key => value]].
-     *
-     * @param  Collection<int, User>  $users
-     * @param  list<string>  $keys
-     * @return Collection<int, array<string, string>>
-     */
-    private function answers(Collection $users, array $keys): Collection
-    {
-        return FormAnswer::query()
-            ->join('form_fields', 'form_fields.id', '=', 'form_answers.form_field_id')
-            ->whereIn('form_answers.user_id', $users->pluck('id'))
-            ->whereIn('form_fields.key', $keys)
-            ->get(['form_answers.user_id', 'form_fields.key', 'form_answers.value'])
-            ->groupBy('user_id')
-            ->map(fn (Collection $rows) => $rows->pluck('value', 'key')->map(fn ($value) => (string) $value)->all());
     }
 }

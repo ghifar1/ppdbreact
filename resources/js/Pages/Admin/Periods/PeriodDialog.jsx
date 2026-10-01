@@ -1,6 +1,7 @@
 import React, {useEffect} from "react";
 import {useForm} from "@inertiajs/react";
 import FieldError from "@/components/FieldError";
+import RupiahInput from "@/components/RupiahInput";
 import {Button} from "@/components/ui/button";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Input} from "@/components/ui/input";
@@ -15,6 +16,7 @@ const toFormData = period => ({
     jenjang: period?.jenjang ?? ALL,
     opens_at: period?.opens_at ?? '',
     closes_at: period?.closes_at ?? '',
+    fee: period?.fee ?? '',
     description: period?.description ?? '',
 })
 
@@ -87,9 +89,17 @@ const PeriodDialog = ({open, onOpenChange, period, jenjangOptions})=>{
                     </div>
 
                     <div className="grid gap-2">
+                        <Label htmlFor="period-fee">Biaya pendaftaran (opsional)</Label>
+                        <RupiahInput id="period-fee" value={form.data.fee} aria-invalid={form.errors.fee ? true : undefined}
+                                     onChange={value => form.setData('fee', value)}/>
+                        <p className="text-xs text-muted-foreground">Kosongkan untuk memakai biaya jenjang di Pengaturan Seleksi. Isi 0 jika gelombang ini gratis.</p>
+                        <FieldError message={form.errors.fee}/>
+                    </div>
+
+                    <div className="grid gap-2">
                         <Label htmlFor="period-description">Keterangan (opsional)</Label>
                         <Textarea id="period-description" rows={3} value={form.data.description}
-                                  placeholder="mis. biaya pendaftaran atau syarat khusus gelombang ini"
+                                  placeholder="mis. syarat khusus gelombang ini"
                                   onChange={e => form.setData('description', e.target.value)}/>
                         <FieldError message={form.errors.description}/>
                     </div>

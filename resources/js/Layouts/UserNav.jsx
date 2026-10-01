@@ -1,9 +1,14 @@
 import React from "react";
 import {Link, usePage} from "@inertiajs/react";
-import {IdCardIcon, LayoutDashboardIcon, LifeBuoyIcon} from "lucide-react";
+import {AwardIcon, BanknoteIcon, IdCardIcon, LayoutDashboardIcon, LifeBuoyIcon} from "lucide-react";
 import AppLayout from "./AppLayout";
 
-const withExamCard = ['terverifikasi', 'lulus', 'tidak_lulus']
+const paymentBadges = {
+    belum: {label: 'Belum', tone: 'todo'},
+    menunggu: {label: 'Dicek', tone: 'todo'},
+    ditolak: {label: 'Ditolak', tone: 'todo'},
+    diterima: {label: 'Lunas', tone: 'done'},
+}
 
 /** How many form menus are complete, shown at the top of the student sidebar. */
 const Progress = ({menus})=>{
@@ -28,14 +33,16 @@ const Progress = ({menus})=>{
 
 const UserNav = ({children})=>{
 
-    const {auth, studentMenus} = usePage().props
+    const {studentMenus, studentNav} = usePage().props
 
     const sections = [
         {
             title: 'Utama',
             items: [
                 {title: 'Dashboard', href: '/dashboard', icon: LayoutDashboardIcon, exact: true},
-                ...(withExamCard.includes(auth.user?.status) ? [{title: 'Kartu Ujian', href: '/kartu', icon: IdCardIcon}] : []),
+                ...(studentNav?.payment ? [{title: 'Pembayaran', href: '/pembayaran', icon: BanknoteIcon, badge: paymentBadges[studentNav.payment]}] : []),
+                ...(studentNav?.card ? [{title: 'Kartu Ujian', href: '/kartu', icon: IdCardIcon}] : []),
+                ...(studentNav?.letter ? [{title: 'Hasil Seleksi', href: '/kelulusan', icon: AwardIcon}] : []),
             ],
         },
         {

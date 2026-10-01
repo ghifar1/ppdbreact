@@ -1,9 +1,11 @@
 import React, {useState} from "react";
 import {Link, router} from "@inertiajs/react";
-import {ChevronRightIcon, SearchIcon, UsersIcon} from "lucide-react";
+import {ChevronRightIcon, SearchIcon, UserPlusIcon, UsersIcon} from "lucide-react";
 import AdminNav from "../../../Layouts/AdminNav";
 import JenjangBadge from "@/components/JenjangBadge";
 import PageHeader from "@/components/PageHeader";
+import Pagination from "@/components/Pagination";
+import PaymentStatusBadge from "@/components/PaymentStatusBadge";
 import StatusBadge from "@/components/StatusBadge";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -25,6 +27,7 @@ const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions}
                 eyebrow="Pengelolaan"
                 title="Data Siswa"
                 description={`${students.total} pendaftar sesuai filter. Klik nama siswa untuk melihat data dan memverifikasi.`}
+                actions={<Button asChild><Link href="/admin/siswa/baru"><UserPlusIcon/> Daftarkan siswa</Link></Button>}
             />
 
             <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
@@ -66,6 +69,7 @@ const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions}
                             <TableHead>No. Pendaftaran</TableHead>
                             <TableHead>Jenjang</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Pembayaran</TableHead>
                             <TableHead>Tgl. Daftar</TableHead>
                             <TableHead className="pr-6 text-right"><span className="sr-only">Aksi</span></TableHead>
                         </TableRow>
@@ -73,7 +77,7 @@ const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions}
                     <TableBody>
                         {students.data.length === 0 && (
                             <TableRow className="hover:bg-transparent">
-                                <TableCell colSpan={6} className="py-14 text-center text-muted-foreground">
+                                <TableCell colSpan={7} className="py-14 text-center text-muted-foreground">
                                     <UsersIcon className="mx-auto mb-3 size-10 text-muted-foreground/60"/>
                                     Tidak ada siswa yang cocok.
                                 </TableCell>
@@ -95,6 +99,11 @@ const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions}
                                 <TableCell className="font-mono text-xs">{student.nomor_pendaftaran}</TableCell>
                                 <TableCell><JenjangBadge jenjang={student.jenjang}/></TableCell>
                                 <TableCell><StatusBadge status={student.status} label={student.status_label}/></TableCell>
+                                <TableCell>
+                                    {student.payment
+                                        ? <PaymentStatusBadge status={student.payment.status} label={student.payment.label}/>
+                                        : <span className="text-xs text-muted-foreground">Gratis</span>}
+                                </TableCell>
                                 <TableCell className="text-muted-foreground">{student.registered_at}</TableCell>
                                 <TableCell className="pr-6 text-right">
                                     <Button asChild variant="outline" size="sm">
@@ -106,23 +115,7 @@ const Index = ({students, filters, jenjangOptions, statusOptions, periodOptions}
                     </TableBody>
                 </Table>
 
-                {students.last_page > 1 && (
-                    <nav className="flex flex-wrap items-center justify-between gap-2 border-t px-6 py-4 text-sm" aria-label="Halaman">
-                        <span className="text-muted-foreground">
-                            Menampilkan {students.from}–{students.to} dari {students.total} siswa
-                        </span>
-                        <div className="flex flex-wrap gap-1">
-                            {students.links.map((link, i) => (
-                                <Button key={i} asChild={!!link.url} size="sm" disabled={!link.url}
-                                        variant={link.active ? 'default' : 'outline'}>
-                                    {link.url
-                                        ? <Link href={link.url} preserveState><span dangerouslySetInnerHTML={{__html: link.label}}/></Link>
-                                        : <span dangerouslySetInnerHTML={{__html: link.label}}/>}
-                                </Button>
-                            ))}
-                        </div>
-                    </nav>
-                )}
+                <Pagination page={students} noun="siswa"/>
             </section>
         </>
     )

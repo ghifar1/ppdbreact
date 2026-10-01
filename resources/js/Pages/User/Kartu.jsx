@@ -1,6 +1,6 @@
 import React from "react";
 import {usePage} from "@inertiajs/react";
-import {PrinterIcon} from "lucide-react";
+import {MapPinIcon, PrinterIcon} from "lucide-react";
 import UserNav from "../../Layouts/UserNav";
 import PageHeader from "@/components/PageHeader";
 import Pattern from "@/components/Pattern";
@@ -49,8 +49,10 @@ const Kartu = ({kartu})=>{
 
                 <div className="grid gap-6 p-6 sm:grid-cols-[1fr_auto]">
                     <dl className="text-sm">
+                        {kartu.nomor_peserta && <Row label="No. Peserta" mono>{kartu.nomor_peserta}</Row>}
                         <Row label="No. Pendaftaran" mono>{kartu.nomor_pendaftaran}</Row>
                         <Row label="Nama">{kartu.nama}</Row>
+                        {kartu.asal_sekolah && <Row label="Asal Sekolah">{kartu.asal_sekolah}</Row>}
                         {kartu.gelombang && <Row label="Gelombang">{kartu.gelombang}</Row>}
                         <Row label="Jenjang">
                             <span className={cn("inline-flex items-center gap-2", style.text)}>
@@ -75,10 +77,32 @@ const Kartu = ({kartu})=>{
                     </div>
                 )}
 
+                {kartu.jadwal.length > 0 && (
+                    <section className="mx-6 mb-6">
+                        <p className="text-xs font-semibold tracking-[0.2em] text-[#0f5a41] uppercase">Jadwal Ujian</p>
+                        <ol className="mt-2 grid gap-2 sm:grid-cols-2">
+                            {kartu.jadwal.map(item => (
+                                <li key={item.id} className="break-inside-avoid rounded-lg border border-stone-300 px-3 py-2 text-sm">
+                                    <p className="text-xs font-semibold text-[#0f5a41]">{item.date_label} · {item.time_label}</p>
+                                    <p className="mt-0.5 font-semibold text-stone-900">{item.title}</p>
+                                    {item.description && <p className="text-xs text-stone-600">{item.description}</p>}
+                                    {(item.location || item.range_label) && (
+                                        <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-stone-600">
+                                            {item.location && <span className="inline-flex items-center gap-1"><MapPinIcon className="size-3"/> {item.location}</span>}
+                                            {item.range_label && <span>Khusus {item.range_label.toLowerCase()}</span>}
+                                        </p>
+                                    )}
+                                </li>
+                            ))}
+                        </ol>
+                    </section>
+                )}
+
                 <footer className="grid gap-6 border-t border-stone-200 px-6 py-5 text-xs sm:grid-cols-2">
                     <ul className="grid list-disc content-start gap-1 pl-4 text-stone-600">
                         <li>Tempel pas foto terbaru ukuran 3 × 4.</li>
                         <li>Bawa kartu ini saat ujian seleksi.</li>
+                        {(kartu.catatan ?? '').split('\n').map(line => line.trim()).filter(Boolean).map(line => <li key={line}>{line}</li>)}
                     </ul>
                     <div className="text-center text-stone-600 sm:text-right">
                         <p>Panitia PPDB</p>

@@ -2,6 +2,9 @@ import React from 'react'
 import {Link, router, usePage} from "@inertiajs/react";
 import {
     ArrowRightIcon,
+    AwardIcon,
+    BanknoteIcon,
+    CalendarClockIcon,
     ClipboardPenIcon,
     HourglassIcon,
     IdCardIcon,
@@ -15,58 +18,121 @@ import Pattern from "@/components/Pattern";
 import {Button} from "@/components/ui/button";
 import {cn} from "@/lib/utils";
 
-const FinalizeButton = ({disabled})=>(
+const FinalizeButton = ()=>(
     <ConfirmDialog
         title="Ajukan finalisasi data?"
         description="Setelah diajukan, data tidak dapat diubah lagi kecuali panitia meminta perbaikan."
         confirmLabel="Ajukan"
         onConfirm={() => router.post('/finalisasi', {}, {preserveScroll: true})}
     >
-        <Button variant="gold" size="lg" disabled={disabled}><SendIcon/> Ajukan Finalisasi</Button>
+        <Button variant="gold" size="lg"><SendIcon/> Ajukan Finalisasi</Button>
     </ConfirmDialog>
 )
 
-/** What the student should do now, based on their status. */
-function content(profil, dataLengkap, firstIncomplete)
+const LinkButton = ({href, icon: Icon, children, variant = 'gold'})=>(
+    <Button asChild variant={variant} size="lg">
+        <Link href={href}>{Icon && <Icon/>} {children}</Link>
+    </Button>
+)
+
+/** Asks for the registration fee when it is unpaid or the proof was rejected. */
+function paymentStep(pembayaran)
 {
+    if (pembayaran?.status === 'ditolak') {
+        return {
+            tone: 'warning',
+            icon: BanknoteIcon,
+            title: 'Bukti pembayaran ditolak',
+            text: 'Unggah ulang bukti pembayaran yang benar agar datamu bisa diverifikasi.',
+            note: pembayaran.note,
+            action: <LinkButton href="/pembayaran" icon={BanknoteIcon}>Unggah ulang bukti</LinkButton>,
+        }
+    }
+
+    if (pembayaran?.status === 'belum') {
+        return {
+            icon: BanknoteIcon,
+            title: `Bayar biaya pendaftaran ${pembayaran.fee_label}`,
+            text: 'Transfer biaya pendaftaran lalu unggah buktinya. Sambil menunggu konfirmasi panitia, kamu tetap bisa mengisi formulir.',
+            action: <LinkButton href="/pembayaran" icon={BanknoteIcon}>Lihat cara pembayaran</LinkButton>,
+        }
+    }
+
+    return null
+}
+
+/** Submit for finalization, or why that is not possible yet. */
+function finalizeStep({finalisasi})
+{
+    if (finalisasi.blocker) {
+        return {
+            tone: 'muted',
+            icon: CalendarClockIcon,
+            title: 'Finalisasi belum bisa diajukan',
+            text: finalisasi.blocker,
+        }
+    }
+
+    const deadline = finalisasi.window.closes_label ? ` Batas finalisasi: ${finalisasi.window.closes_label}.` : ''
+
+    return {
+        icon: SendIcon,
+        title: 'Semua formulir sudah lengkap',
+        text: `Periksa kembali datamu, lalu ajukan finalisasi agar bisa diverifikasi panitia.${deadline}`,
+        action: <FinalizeButton/>,
+    }
+}
+
+/** What the student should do now, based on their status. */
+function content(props, firstIncomplete)
+{
+    const {profil, dataLengkap, pembayaran, kartu, pengumuman} = props
     const fillForms = firstIncomplete && (
-        <Button asChild variant="gold" size="lg">
-            <Link href={`/formulir/${firstIncomplete.id}`}>Lanjut isi {firstIncomplete.title} <ArrowRightIcon/></Link>
-        </Button>
+        <LinkButton href={`/formulir/${firstIncomplete.id}`}>Lanjut isi {firstIncomplete.title} <ArrowRightIcon/></LinkButton>
     )
 
     switch (profil.status) {
-        case 'perlu_perbaikan':
+        case 'perlu_perbaikan': {
+            const blocker = dataLengkap && props.finalisasi.blocker
+            const needsPayment = ['belum', 'ditolak'].includes(pembayaran?.status)
             return {
                 tone: 'warning',
                 icon: TriangleAlertIcon,
                 title: 'Panitia meminta perbaikan data',
-                text: 'Perbaiki data sesuai catatan panitia, lalu ajukan finalisasi kembali.',
+                text: blocker || 'Perbaiki data sesuai catatan panitia, lalu ajukan finalisasi kembali.',
                 note: profil.catatan_admin,
-                action: dataLengkap ? <FinalizeButton/> : fillForms,
+                action: !dataLengkap ? fillForms
+                    : needsPayment ? <LinkButton href="/pembayaran" icon={BanknoteIcon}>Unggah bukti pembayaran</LinkButton>
+                    : blocker ? null : <FinalizeButton/>,
             }
+        }
         case 'menunggu_verifikasi':
-            return {
+            return paymentStep(pembayaran) ?? {
                 icon: HourglassIcon,
                 title: 'Datamu sedang diperiksa panitia',
-                text: 'Panitia akan memverifikasi datamu. Kartu ujian bisa diunduh setelah data terverifikasi.',
+                text: pembayaran?.status === 'menunggu'
+                    ? 'Panitia akan memeriksa datamu dan bukti pembayaranmu. Kartu ujian bisa diunduh setelah data terverifikasi.'
+                    : 'Panitia akan memverifikasi datamu. Kartu ujian bisa diunduh setelah data terverifikasi.',
             }
-        case 'terverifikasi':
-            return {
+        case 'terverifikasi': {
+            const announcement = pengumuman ? ` Hasil seleksi diumumkan ${pengumuman}.` : ''
+            return kartu.available ? {
                 icon: IdCardIcon,
                 title: 'Data terverifikasi. Kartu ujian siap!',
-                text: 'Cetak kartu ujian dan bawa saat mengikuti seleksi. Akun untuk masuk ke sistem ujian tertera di kartu.',
-                action: (
-                    <Button asChild variant="gold" size="lg">
-                        <Link href="/kartu"><IdCardIcon/> Buka Kartu Ujian</Link>
-                    </Button>
-                ),
+                text: `Cetak kartu ujian dan bawa saat mengikuti seleksi. Jadwal ujian dan akun sistem ujian tertera di kartu.${announcement}`,
+                action: <LinkButton href="/kartu" icon={IdCardIcon}>Buka Kartu Ujian</LinkButton>,
+            } : {
+                icon: IdCardIcon,
+                title: 'Data terverifikasi',
+                text: `${kartu.message}${announcement}`,
             }
+        }
         case 'lulus':
             return {
                 icon: PartyPopperIcon,
                 title: 'Selamat! Kamu dinyatakan LULUS seleksi.',
-                text: 'Barakallahu fiik. Ikuti informasi daftar ulang dari panitia PPDB.',
+                text: 'Barakallahu fiik. Cetak surat hasil seleksi dan ikuti ketentuan daftar ulang yang tertera di dalamnya.',
+                action: <LinkButton href="/kelulusan" icon={AwardIcon}>Cetak surat kelulusan</LinkButton>,
             }
         case 'tidak_lulus':
             return {
@@ -74,19 +140,15 @@ function content(profil, dataLengkap, firstIncomplete)
                 icon: HeartHandshakeIcon,
                 title: 'Mohon maaf, kamu belum lulus seleksi.',
                 text: 'Terima kasih telah mendaftar. Tetap semangat dan jangan berhenti belajar.',
+                action: <LinkButton href="/kelulusan" icon={AwardIcon} variant="outline">Lihat surat hasil seleksi</LinkButton>,
             }
         default:
-            return dataLengkap ? {
-                icon: SendIcon,
-                title: 'Semua formulir sudah lengkap',
-                text: 'Periksa kembali datamu, lalu ajukan finalisasi agar bisa diverifikasi panitia.',
-                action: <FinalizeButton/>,
-            } : {
+            return paymentStep(pembayaran) ?? (dataLengkap ? finalizeStep(props) : {
                 icon: ClipboardPenIcon,
                 title: 'Lengkapi formulir pendaftaran',
                 text: 'Isi semua isian wajib (*) di setiap formulir. Formulir yang sudah lengkap ditandai centang.',
                 action: fillForms,
-            }
+            })
     }
 }
 
@@ -117,10 +179,10 @@ const tones = {
     },
 }
 
-export const NextStep = ({profil, dataLengkap})=>{
+export const NextStep = (props)=>{
 
     const {studentMenus} = usePage().props
-    const step = content(profil, dataLengkap, studentMenus.find(menu => !menu.complete))
+    const step = content(props, studentMenus.find(menu => !menu.complete))
     const tone = tones[step.tone ?? 'brand']
     const Icon = step.icon
 

@@ -23,7 +23,8 @@ class PublicPagesTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Welcome')
                 ->has('jenjangOptions', 3)
-                ->has('jadwal.pengisian')
+                ->has('jadwal', 3)
+                ->has('jadwal.ma.pengisian')
                 ->where('sekolah.nama', 'Madrasah Contoh')
                 ->where('sekolah.tahun', '2027/2028')
                 ->where('sekolah.logo', asset('images/logo.png')));

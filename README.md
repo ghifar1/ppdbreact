@@ -22,7 +22,7 @@ npm run build                # or `npm run dev` while developing
 
 Admins log in at `/login` like students and land on `/admin`, where **Menu & Formulir** manages the menus and form fields per level and **Data Siswa** lists registrations.
 
-Timeline dates on the student dashboard and landing page, and the academic year, are set in `config/ppdb.php`. Times use `APP_TIMEZONE` (default `Asia/Jakarta`).
+The academic year is set in `config/ppdb.php` (`PPDB_TAHUN`); the dates on the student dashboard and landing page come from **Gelombang Pendaftaran**, **Pengaturan Seleksi** and **Jadwal Ujian**. Times use `APP_TIMEZONE` (default `Asia/Jakarta`).
 
 ### Registration periods (gelombang)
 
@@ -31,6 +31,17 @@ Under **Gelombang Pendaftaran** admins add periods with an opening and closing t
 ### Exam accounts
 
 Each verified student gets a login for the external exam (e-learning/CBT) system, as in ppdb2020: the username is their NISN (or their registration number when there is no NISN) and the password a random 10-character code without look-alike characters. The account is created when an admin sets the status to Terverifikasi, is printed on the exam card, and is listed under **Akun Ujian**, where admins can create missing accounts, issue a new password and download a CSV for the exam system. Passwords are readable by admins and the student but stored encrypted (Laravel's `encrypted` cast), so keep `APP_KEY` safe when moving servers.
+
+### Admission flow
+
+Everything below is set per level under **Pengaturan Seleksi**. A setting left empty does not restrict anything, so a school can start with only some of it.
+
+- **Registration fee.** With a fee, students see the amount and bank account under **Pembayaran** and upload a transfer proof (JPG, PNG or PDF, max 2 MB). They can fill in forms while they wait, but can only submit for finalization once a proof has been sent. Admins check proofs under **Pembayaran** (or on the student's page), accept them or reject them with a reason the student sees, and can record a cash payment made at the school. A student can only be set to Terverifikasi (or a result) once paid. A registration period can have its own fee (e.g. a cheaper first wave), which replaces the level's fee; 0 makes that period free.
+- **Finalization and exam card windows.** Students can only submit for finalization, and open the exam card, between the dates set. Students the committee asked to fix their data can always resubmit.
+- **Announcement.** Results (Lulus/Tidak Lulus) can be entered at any time but are shown to students only from the announcement time; until then they see Terverifikasi.
+- **Exam schedule.** Under **Jadwal Ujian** admins list the exam activities (date, time, place) for a level and/or registration period. Activities can be split into sessions or rooms by participant number (e.g. 1–60 in Ruang 1, 61–120 in Ruang 2); the copy button prefills the next session. Each verified student gets a participant number (nomor peserta), counted per level and registration year, and their exam card shows only their own sessions, plus the notes set for the card.
+- **Result letter.** After the announcement students can print a letter (surat hasil seleksi) stating Lulus or Tidak Lulus, with the re-registration instructions and the headmaster's name and NIP. Lines starting with `1.` or `-` in the instructions are printed as a list.
+- **Registering at the school.** **Data Siswa → Daftarkan siswa** creates an account for a student who registers in person (optionally recording a cash payment) and shows a printable login card with a generated password. The password is shown only once; **Cetak kartu login** on the student's page makes a new one.
 
 ### School identity
 
@@ -43,12 +54,13 @@ PPDB_ALAMAT="Jl. Pendidikan No. 1, Bogor"      # optional, shown in the footer
 PPDB_TELEPON="0251-123456"                      # optional
 PPDB_EMAIL="ppdb@example.sch.id"                # optional
 PPDB_LOGO=images/logo.png                       # optional, a file in public/; the built-in crest is used when empty
+PPDB_KOTA=Bogor                                 # optional, printed before the date on the result letter
 PPDB_TAHUN=2027/2028
 ```
 
 The theme (deep green and gold, with uniform colors per level: MI red, MTs navy, MA grey) lives in `resources/css/app.css` as CSS variables, so colors can be changed in one place. Dark mode is supported and remembered per browser.
 
-Uploaded files are stored privately in `storage/app/private/ppdb` and are only served to the owning student and admins.
+Uploaded files, including payment proofs, are stored privately in `storage/app/private/ppdb` and are only served to the owning student and admins.
 
 ### Importing data from ppdb2020
 
@@ -77,11 +89,12 @@ What is carried over:
 - **Accounts**: name, phone and the old password, so students log in as before. Email logins can use their email (the login page accepts a username or an email); plain-username logins keep their username unless it is taken. Accounts created with Google Sign-In had no password and need a reset from **Data Siswa**. A CSV with each account's new login and a note is written to `storage/app/private/ppdb-import/`.
 - **Form data**: every `biodatas` column, in menus that mirror the old forms (Data Pribadi, Data Orang Tua, Data Wali, Data Sekolah, Prestasi, Dokumen). Existing fields with the same meaning are reused, missing ones are created. Birth dates typed as `dd/mm/yyyy` become dates; values not in a dropdown's choices are added as choices and listed in the report.
 - **Documents**: KK, akta, rapor, SKL and the profile photo, copied into private storage.
-- **Status**: waiting → Menunggu Verifikasi, rejected (with the committee's comment) → Perlu Perbaikan, accepted → Terverifikasi, and the selection result → Lulus / Tidak Lulus. The old exam number becomes the registration number (e.g. `MA-2024-007`).
+- **Status**: waiting → Menunggu Verifikasi, rejected (with the committee's comment) → Perlu Perbaikan, accepted → Terverifikasi, and the selection result → Lulus / Tidak Lulus. The old exam number becomes the registration number (e.g. `MA-2024-007`) and the participant number.
+- **Payment**: imported students count as paid (recorded as "Data ppdb2020"), since ppdb2020 only created accounts after checking the payment.
 - **Exam accounts**: the e-learning username and password from the old exam card.
 - **Registration periods**: every `regist_sessions` wave becomes a period of the imported level, and each student is linked to the wave they registered in. If none of them is open any more, registration for that level is closed until you add a new period; the import report says so.
 
-Not imported: payments (`pembayarans`), logs and settings.
+Not imported: the payment proofs themselves (`pembayarans`, which are not linked to accounts), logs and settings.
 
 The import runs in a single transaction, so an error leaves nothing half-imported. Running it again skips students it already imported.
 

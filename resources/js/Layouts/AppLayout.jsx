@@ -48,6 +48,12 @@ const NavItem = ({item, active, onNavigate})=>{
                 <Icon className={cn("size-5 shrink-0", active ? "text-sidebar-primary" : "opacity-80")}/>
             )}
             <span className="flex-1 truncate">{item.title}</span>
+            {item.badge && (
+                <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
+                    item.badge.tone === 'done' ? "bg-sidebar-primary/20 text-sidebar-primary" : "bg-amber-400/20 text-amber-200")}>
+                    {item.badge.label}
+                </span>
+            )}
             {item.complete && <span className="sr-only">(lengkap)</span>}
         </Link>
     )

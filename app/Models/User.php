@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -49,6 +50,8 @@ class User extends Authenticatable
             'status' => StatusPendaftaran::class,
             'finalized_at' => 'datetime',
             'exam_password' => 'encrypted',
+            'exam_number' => 'integer',
+            'exam_year' => 'integer',
         ];
     }
 
@@ -80,6 +83,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Participant number (nomor peserta) printed on the exam card, e.g. 007.
+     */
+    public function nomorPeserta(): ?string
+    {
+        return $this->exam_number !== null ? sprintf('%03d', $this->exam_number) : null;
+    }
+
+    /**
      * @return HasMany<FormAnswer, $this>
      */
     public function answers(): HasMany
@@ -93,5 +104,13 @@ class User extends Authenticatable
     public function registrationPeriod(): BelongsTo
     {
         return $this->belongsTo(RegistrationPeriod::class);
+    }
+
+    /**
+     * @return HasOne<Payment, $this>
+     */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
     }
 }

@@ -4,10 +4,12 @@ namespace App\Services\Ppdb2020;
 
 use App\Enums\FieldType;
 use App\Enums\Jenjang;
+use App\Enums\PaymentStatus;
 use App\Enums\StatusPendaftaran;
 use App\Models\FormAnswer;
 use App\Models\FormField;
 use App\Models\Menu;
+use App\Models\Payment;
 use App\Models\RegistrationPeriod;
 use App\Models\User;
 use App\Services\RegistrationSchedule;
@@ -365,6 +367,14 @@ final class Importer
         }
 
         $this->report->statuses[$user->status->value] = ($this->report->statuses[$user->status->value] ?? 0) + 1;
+        // ppdb2020 only made accounts after the registration fee was checked.
+        $user->payment()->firstOrCreate([], [
+            'method' => Payment::METHOD_IMPORT,
+            'status' => PaymentStatus::Diterima,
+            'note' => 'Akun ppdb2020: dibuat setelah pembayaran diperiksa.',
+            'submitted_at' => $user->created_at,
+            'reviewed_at' => $user->created_at,
+        ]);
         $this->importAnswers($user, $data);
         $this->importFiles($user, $row, $related);
     }
@@ -479,6 +489,17 @@ final class Importer
                 ? sprintf('%s-%s-%03d', strtoupper($this->jenjang->value), $year, (int) $number)
                 : null,
         ]);
+
+        // The old exam number is also the participant number exam sessions are split by.
+        if (is_numeric($number) && (int) $number > 0 && $user->exam_number === null) {
+            $taken = User::where('jenjang', $this->jenjang)->where('exam_year', (int) $year)->where('exam_number', (int) $number)
+                ->when($user->exists, fn ($query) => $query->whereKeyNot($user->id))
+                ->exists();
+
+            $taken
+                ? $this->report->warn("{$user->name}: participant number {$number} ({$year}) is already used; a new one is given when the exam card is opened.")
+                : $user->forceFill(['exam_number' => (int) $number, 'exam_year' => (int) $year]);
+        }
     }
 
     /**

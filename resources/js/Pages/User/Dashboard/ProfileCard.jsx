@@ -1,13 +1,14 @@
 import React from 'react'
 import {usePage} from "@inertiajs/react";
 import JenjangBadge from "@/components/JenjangBadge";
+import PaymentStatusBadge from "@/components/PaymentStatusBadge";
 import Pattern from "@/components/Pattern";
 import SchoolLogo from "@/components/SchoolLogo";
 import StatusBadge from "@/components/StatusBadge";
 import {initials} from "@/lib/utils";
 
 /** The student's details, styled after a school ID card. */
-export const ProfileCard = ({profil})=>{
+export const ProfileCard = ({profil, pembayaran})=>{
 
     const {sekolah} = usePage().props
 
@@ -39,10 +40,22 @@ export const ProfileCard = ({profil})=>{
                         <dt className="text-muted-foreground">No. Pendaftaran</dt>
                         <dd className="font-mono font-semibold">{profil.nomor_pendaftaran}</dd>
                     </div>
+                    {profil.nomor_peserta && (
+                        <div className="flex items-center justify-between gap-3">
+                            <dt className="text-muted-foreground">No. Peserta</dt>
+                            <dd className="font-mono font-semibold">{profil.nomor_peserta}</dd>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between gap-3">
                         <dt className="text-muted-foreground">Status</dt>
                         <dd><StatusBadge status={profil.status} label={profil.status_label}/></dd>
                     </div>
+                    {pembayaran && (
+                        <div className="flex items-center justify-between gap-3">
+                            <dt className="text-muted-foreground">Pembayaran</dt>
+                            <dd><PaymentStatusBadge status={pembayaran.status} label={pembayaran.status_label}/></dd>
+                        </div>
+                    )}
                     {profil.gelombang && (
                         <div className="flex items-center justify-between gap-3">
                             <dt className="text-muted-foreground">Gelombang</dt>

@@ -12,7 +12,7 @@ class WelcomeController extends Controller
     {
         return Inertia::render('Welcome', [
             'jenjangOptions' => Jenjang::options(),
-            'jadwal' => config('ppdb.jadwal'),
+            'jadwal' => $schedule->timelines(),
             'pendaftaran' => $schedule->summary(),
         ]);
     }
@@ -20,7 +20,8 @@ class WelcomeController extends Controller
     public function help(RegistrationSchedule $schedule)
     {
         return Inertia::render('Guess/Help', [
-            'jadwal' => config('ppdb.jadwal'),
+            'jenjangOptions' => Jenjang::options(),
+            'jadwal' => $schedule->timelines(),
             'pendaftaran' => $schedule->summary(),
         ]);
     }

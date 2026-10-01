@@ -1,6 +1,6 @@
 import React from "react";
 import {Head, Link, useForm} from "@inertiajs/react";
-import {CalendarClockIcon, CalendarX2Icon, UserPlusIcon} from "lucide-react";
+import {BanknoteIcon, CalendarClockIcon, CalendarX2Icon, UserPlusIcon} from "lucide-react";
 import AuthLayout from "../../Layouts/AuthLayout";
 import FieldError from "@/components/FieldError";
 import PasswordInput from "@/components/PasswordInput";
@@ -175,6 +175,13 @@ const RegisterForm = ({jenjangOptions, jenjang, pendaftaran})=>{
                                     ? <>Pendaftaran jenjang ini belum dibuka. <b>{selected.next.name}</b> dibuka {selected.next.opens_label}.</>
                                     : <>Pendaftaran jenjang ini sudah ditutup.</>}
                         </p>
+                    </div>
+                )}
+
+                {selected?.open && selected.fee_label && (
+                    <div className="flex items-start gap-3 rounded-xl border border-gold/40 bg-gold-soft/60 px-4 py-3 text-sm text-gold-foreground dark:text-gold">
+                        <BanknoteIcon className="mt-0.5 size-4 shrink-0"/>
+                        <p>Biaya pendaftaran <b>{selected.fee_label}</b>. Cara pembayaran dan unggah bukti transfer ada di dashboard setelah akun dibuat.</p>
                     </div>
                 )}
 

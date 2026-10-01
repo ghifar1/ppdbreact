@@ -8,8 +8,10 @@ use App\Enums\StatusPendaftaran;
 use App\Http\Controllers\Controller;
 use App\Models\FormField;
 use App\Models\Menu;
+use App\Models\Payment;
 use App\Models\RegistrationPeriod;
 use App\Models\User;
+use App\Services\Admission;
 use App\Services\ExamAccounts;
 use App\Services\FormService;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +24,7 @@ class StudentController extends Controller
 {
     public function __construct(private FormService $forms, private ExamAccounts $examAccounts) {}
 
-    public function index(Request $request): Response
+    public function index(Request $request, Admission $admission): Response
     {
         $filters = $request->validate([
             'jenjang' => ['nullable', Rule::enum(Jenjang::class)],
@@ -40,6 +42,7 @@ class StudentController extends Controller
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('username', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")))
+            ->with(['payment', 'registrationPeriod'])
             ->latest()
             ->paginate(20)
             ->withQueryString()
@@ -51,6 +54,9 @@ class StudentController extends Controller
                 'jenjang' => $student->jenjang?->shortLabel(),
                 'status' => $student->status->value,
                 'status_label' => $student->status->label(),
+                'payment' => $admission->paymentRequired($student)
+                    ? ['status' => $student->payment?->status->value ?? 'belum', 'label' => $student->payment?->status->label() ?? 'Belum bayar']
+                    : null,
                 'registered_at' => $student->created_at?->format('d/m/Y'),
             ]);
 
@@ -71,7 +77,7 @@ class StudentController extends Controller
         ]);
     }
 
-    public function show(User $student): Response
+    public function show(User $student, Admission $admission): Response
     {
         $this->ensureStudent($student);
 
@@ -94,6 +100,7 @@ class StudentController extends Controller
                 'exam_username' => $student->exam_username,
                 'exam_password' => $student->exam_password,
                 'exam_eligible' => $student->status->hasExamCard(),
+                'nomor_peserta' => $student->nomorPeserta(),
                 'status' => $student->status->value,
                 'status_label' => $student->status->label(),
                 'catatan_admin' => $student->catatan_admin,
@@ -115,10 +122,16 @@ class StudentController extends Controller
                 ]),
             ]),
             'statusOptions' => StatusPendaftaran::options(),
+            'payment' => [
+                'required' => $admission->paymentRequired($student),
+                'fee' => $admission->fee($student),
+                'fee_label' => Payment::rupiah($admission->fee($student)),
+                'record' => $student->payment?->present(),
+            ],
         ]);
     }
 
-    public function updateStatus(Request $request, User $student): RedirectResponse
+    public function updateStatus(Request $request, User $student, Admission $admission): RedirectResponse
     {
         $this->ensureStudent($student);
 
@@ -130,8 +143,16 @@ class StudentController extends Controller
             ],
         ]);
 
+        $status = StatusPendaftaran::from($data['status']);
+
+        if ($status->hasExamCard() && ! $admission->isPaid($student)) {
+            return back()->withErrors([
+                'status' => "Pembayaran {$student->name} belum lunas. Konfirmasi pembayarannya dulu sebelum mengubah status menjadi {$status->label()}.",
+            ]);
+        }
+
         $student->forceFill([
-            'status' => $data['status'],
+            'status' => $status,
             'catatan_admin' => $data['catatan_admin'] ?? null,
         ])->save();
 

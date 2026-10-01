@@ -1,16 +1,31 @@
-import React from "react";
+import React, {useState} from "react";
 import {router, useForm} from "@inertiajs/react";
-import {CircleCheckIcon, FileIcon, KeyRoundIcon, MonitorCheckIcon, RefreshCwIcon, ShieldCheckIcon} from "lucide-react";
+import {
+    BanknoteIcon,
+    CircleCheckIcon,
+    FileIcon,
+    HandCoinsIcon,
+    KeyRoundIcon,
+    MonitorCheckIcon,
+    PrinterIcon,
+    RefreshCwIcon,
+    ShieldCheckIcon,
+} from "lucide-react";
 import AdminNav from "../../../Layouts/AdminNav";
+import {ConfirmPaymentButton, ProofButton, RejectPaymentButton} from "../Payments/PaymentActions";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import FieldError from "@/components/FieldError";
 import JenjangBadge from "@/components/JenjangBadge";
 import PageHeader from "@/components/PageHeader";
 import PasswordInput from "@/components/PasswordInput";
+import PaymentStatusBadge from "@/components/PaymentStatusBadge";
+import RupiahInput from "@/components/RupiahInput";
 import StatusBadge from "@/components/StatusBadge";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Textarea} from "@/components/ui/textarea";
@@ -112,6 +127,99 @@ const ExamAccountCard = ({student})=>{
     )
 }
 
+/** Record a registration fee paid in cash at the school office. */
+const CashPaymentButton = ({student, fee})=>{
+
+    const [open, setOpen] = useState(false)
+    const form = useForm({amount: fee ? String(fee) : '', note: ''})
+
+    function submit(e)
+    {
+        e.preventDefault()
+        form.post(`/admin/siswa/${student.id}/pembayaran`, {preserveScroll: true, onSuccess: () => setOpen(false)})
+    }
+
+    return (
+        <>
+            <Button variant="outline" className="w-full" onClick={() => setOpen(true)}><HandCoinsIcon/> Catat pembayaran tunai</Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <form onSubmit={submit} className="grid gap-4">
+                        <DialogHeader>
+                            <DialogTitle className="font-serif text-xl">Pembayaran tunai {student.name}</DialogTitle>
+                            <DialogDescription>Untuk siswa yang membayar langsung di sekolah. Pembayaran langsung tercatat lunas.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-2">
+                            <Label htmlFor="cash-amount">Jumlah</Label>
+                            <RupiahInput id="cash-amount" value={form.data.amount} aria-invalid={form.errors.amount ? true : undefined}
+                                         onChange={value => form.setData('amount', value)}/>
+                            <FieldError message={form.errors.amount}/>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="cash-note">Catatan (opsional)</Label>
+                            <Input id="cash-note" value={form.data.note} placeholder="mis. Diterima oleh Bu Siti, kuitansi no. 12"
+                                   onChange={e => form.setData('note', e.target.value)}/>
+                            <FieldError message={form.errors.note}/>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
+                            <Button type="submit" disabled={form.processing}>Catat lunas</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </>
+    )
+}
+
+const PaymentCard = ({student, payment})=>{
+
+    const record = payment.record
+
+    if (!payment.required && !record) {
+        return null
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-serif text-lg"><BanknoteIcon className="size-5 text-primary"/> Pembayaran</CardTitle>
+                <CardDescription>
+                    {payment.required ? <>Biaya pendaftaran {payment.fee_label}. Siswa bisa diverifikasi setelah lunas.</> : 'Tidak ada biaya pendaftaran untuk siswa ini.'}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+                <div className="flex items-center justify-between gap-3">
+                    <PaymentStatusBadge status={record?.status ?? 'belum'} label={record?.status_label ?? 'Belum bayar'}/>
+                    {record && <ProofButton proof={record.proof} title={student.name}/>}
+                </div>
+                {record && (
+                    <dl className="grid gap-2 rounded-lg border bg-muted/40 p-3 text-sm">
+                        {record.amount_label && <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Jumlah</dt><dd className="font-semibold">{record.amount_label}</dd></div>}
+                        <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Cara bayar</dt><dd>{record.method_label}</dd></div>
+                        {record.sender_name && <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Pengirim</dt><dd className="text-right">{record.sender_name}</dd></div>}
+                        {record.submitted_at && <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Dikirim</dt><dd>{record.submitted_at}</dd></div>}
+                        {record.reviewed_at && (
+                            <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Diperiksa</dt><dd className="text-right">{record.reviewed_at}{record.reviewer && ` oleh ${record.reviewer}`}</dd></div>
+                        )}
+                        {record.note && <div className="grid gap-0.5"><dt className="text-muted-foreground">Catatan</dt><dd className="whitespace-pre-line">{record.note}</dd></div>}
+                    </dl>
+                )}
+                {record?.proof && record.status !== 'diterima' && (
+                    <div className="grid grid-cols-2 gap-2">
+                        <ConfirmPaymentButton payment={record} size="default"/>
+                        {record.status !== 'ditolak' && <RejectPaymentButton payment={record} studentName={student.name} size="default"/>}
+                    </div>
+                )}
+                {record?.status === 'diterima' && record.method === 'transfer' && (
+                    <RejectPaymentButton payment={record} studentName={student.name} size="default"/>
+                )}
+                {payment.required && record?.status !== 'diterima' && <CashPaymentButton student={student} fee={payment.fee}/>}
+            </CardContent>
+        </Card>
+    )
+}
+
 const PasswordForm = ({student})=>{
 
     const form = useForm({password: '', password_confirmation: ''})
@@ -126,9 +234,18 @@ const PasswordForm = ({student})=>{
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-serif text-lg"><KeyRoundIcon className="size-5 text-primary"/> Atur ulang password</CardTitle>
-                <CardDescription>Untuk siswa yang lupa password. Beri tahu password baru ke siswa.</CardDescription>
+                <CardDescription>Untuk siswa yang lupa password, atau mendaftar di sekolah dan perlu kartu login.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="grid gap-5">
+                <ConfirmDialog
+                    title="Buat password baru dan cetak kartu login?"
+                    description="Password lama tidak bisa dipakai lagi. Kartu login berisi username dan password baru siswa."
+                    confirmLabel="Buat password baru"
+                    onConfirm={() => router.post(`/admin/siswa/${student.id}/kartu-login`)}
+                >
+                    <Button variant="outline" className="w-full"><PrinterIcon/> Cetak kartu login</Button>
+                </ConfirmDialog>
+                <p className="flex items-center gap-3 text-xs text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">atau tentukan sendiri</p>
                 <form onSubmit={submit} className="grid gap-4">
                     <div className="grid gap-2">
                         <Label htmlFor="new-password">Password baru</Label>
@@ -152,7 +269,7 @@ const PasswordForm = ({student})=>{
     )
 }
 
-const Show = ({student, menus, statusOptions})=>{
+const Show = ({student, menus, statusOptions, payment})=>{
 
     const complete = menus.filter(menu => menu.complete).length
 
@@ -179,6 +296,7 @@ const Show = ({student, menus, statusOptions})=>{
                             <div><dt className="text-muted-foreground">Diajukan</dt><dd className="font-medium">{student.finalized_at || 'Belum diajukan'}</dd></div>
                             <div><dt className="text-muted-foreground">Formulir lengkap</dt><dd className="font-medium">{complete} dari {menus.length}</dd></div>
                             <div><dt className="text-muted-foreground">Gelombang</dt><dd className="font-medium">{student.gelombang || '-'}</dd></div>
+                            <div><dt className="text-muted-foreground">No. Peserta</dt><dd className="font-mono font-medium">{student.nomor_peserta || '-'}</dd></div>
                             {student.legacy_id && (
                                 <div><dt className="text-muted-foreground">Asal data</dt><dd className="font-medium">PPDB lama (ID {student.legacy_id})</dd></div>
                             )}
@@ -223,6 +341,7 @@ const Show = ({student, menus, statusOptions})=>{
 
                 <div className="grid content-start gap-6 lg:sticky lg:top-22">
                     <StatusForm key={`${student.id}-${student.status}`} student={student} statusOptions={statusOptions}/>
+                    <PaymentCard student={student} payment={payment}/>
                     <ExamAccountCard student={student}/>
                     <PasswordForm student={student}/>
                 </div>

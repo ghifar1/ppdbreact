@@ -1,6 +1,13 @@
 import React from "react";
 import {Link, usePage} from "@inertiajs/react";
-import {ArrowRightIcon, CalendarRangeIcon, ClipboardCheckIcon, KeyRoundIcon, ListChecksIcon, UsersIcon} from "lucide-react";
+import {
+    ArrowRightIcon,
+    BanknoteIcon,
+    CalendarDaysIcon,
+    ClipboardCheckIcon,
+    SlidersHorizontalIcon,
+    UserPlusIcon,
+} from "lucide-react";
 import AdminNav from "../../Layouts/AdminNav";
 import PageHeader from "@/components/PageHeader";
 import Pattern from "@/components/Pattern";
@@ -20,13 +27,13 @@ const barColors = {
 
 const quickLinks = [
     {href: '/admin/siswa?status=menunggu_verifikasi', icon: ClipboardCheckIcon, title: 'Verifikasi pendaftar', text: 'Periksa data yang sudah diajukan'},
-    {href: '/admin/gelombang', icon: CalendarRangeIcon, title: 'Gelombang pendaftaran', text: 'Atur kapan pendaftaran dibuka'},
-    {href: '/admin/menu', icon: ListChecksIcon, title: 'Menu & formulir', text: 'Atur isian formulir per jenjang'},
-    {href: '/admin/siswa', icon: UsersIcon, title: 'Data siswa', text: 'Cari dan kelola pendaftar'},
-    {href: '/admin/akun-ujian', icon: KeyRoundIcon, title: 'Akun ujian', text: 'Login ujian siswa terverifikasi'},
+    {href: '/admin/pembayaran', icon: BanknoteIcon, title: 'Konfirmasi pembayaran', text: 'Periksa bukti transfer pendaftar'},
+    {href: '/admin/siswa/baru', icon: UserPlusIcon, title: 'Daftarkan siswa', text: 'Buat akun untuk pendaftar di sekolah'},
+    {href: '/admin/jadwal-ujian', icon: CalendarDaysIcon, title: 'Jadwal ujian', text: 'Kegiatan, sesi dan ruang ujian'},
+    {href: '/admin/pengaturan', icon: SlidersHorizontalIcon, title: 'Pengaturan seleksi', text: 'Biaya, batas waktu dan pengumuman'},
 ]
 
-const Dashboard = ({jenjang, status, total})=>{
+const Dashboard = ({jenjang, status, total, pembayaranMenunggu})=>{
 
     const {sekolah} = usePage().props
     const menunggu = status.find(item => item.value === 'menunggu_verifikasi')?.total ?? 0
@@ -46,9 +53,15 @@ const Dashboard = ({jenjang, status, total})=>{
                         <p className="text-sm text-brand-foreground/80">Total pendaftar</p>
                         <p className="mt-2 font-serif text-4xl font-semibold text-white">{total}</p>
                         <Link href="/admin/siswa?status=menunggu_verifikasi"
-                              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-gold hover:underline">
+                              className="mt-3 flex items-center gap-1 text-sm font-medium text-gold hover:underline">
                             {menunggu} menunggu verifikasi <ArrowRightIcon className="size-4"/>
                         </Link>
+                        {pembayaranMenunggu > 0 && (
+                            <Link href="/admin/pembayaran"
+                                  className="mt-1 flex items-center gap-1 text-sm font-medium text-gold hover:underline">
+                                {pembayaranMenunggu} pembayaran perlu dicek <ArrowRightIcon className="size-4"/>
+                            </Link>
+                        )}
                     </div>
                 </div>
                 {jenjang.map(item => {

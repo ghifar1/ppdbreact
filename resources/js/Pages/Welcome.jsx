@@ -3,13 +3,14 @@ import {Head, Link, usePage} from "@inertiajs/react";
 import {ArrowRightIcon, BadgeCheckIcon, CalendarDaysIcon, CalendarRangeIcon, GraduationCapIcon} from "lucide-react";
 import PublicLayout from "../Layouts/PublicLayout";
 import ArchDivider from "@/components/ArchDivider";
+import JenjangSwitch, {useJadwal} from "@/components/JenjangSwitch";
 import PeriodList from "@/components/PeriodList";
 import Pattern from "@/components/Pattern";
 import {Crest} from "@/components/SchoolLogo";
 import {Button} from "@/components/ui/button";
 import {cn} from "@/lib/utils";
 import {jenjangStyle} from "@/lib/jenjang";
-import {jadwalItems, steps} from "@/lib/ppdb";
+import {jadwalItems, stepsFor} from "@/lib/ppdb";
 
 const SectionHeading = ({eyebrow, title, children, center = false})=>(
     <div className={cn("max-w-2xl", center && "mx-auto text-center")}>
@@ -190,6 +191,9 @@ const JenjangSection = ({jenjangOptions, pendaftaran})=>(
                                 <h3 className="font-serif text-xl font-semibold">{option.label}</h3>
                                 <p className="mt-1 text-sm text-muted-foreground">{style.tagline}</p>
                                 <JenjangAvailability status={status}/>
+                                {status?.fee_label && (
+                                    <p className="mt-1 text-sm text-muted-foreground">Biaya pendaftaran <span className="font-semibold text-foreground">{status.fee_label}</span></p>
+                                )}
                                 <ul className="mt-5 grid gap-2 text-sm">
                                     {['Formulir khusus jenjang ' + option.short, 'Unggah berkas pendukung', 'Kartu ujian & pengumuman online'].map(item => (
                                         <li key={item} className="flex items-center gap-2">
@@ -218,75 +222,93 @@ const JenjangSection = ({jenjangOptions, pendaftaran})=>(
     </section>
 )
 
-const AlurSection = ()=>(
-    <section id="alur" className="scroll-mt-20 border-y bg-card py-20 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <SectionHeading eyebrow="Alur Pendaftaran" title="Lima langkah menuju madrasah impian" center>
-                Semua langkah dilakukan secara online. Status pendaftaranmu selalu terlihat di dashboard.
-            </SectionHeading>
+const stepCount = {5: 'Lima', 6: 'Enam'}
 
-            <ol className="relative mt-14 grid gap-8 lg:grid-cols-5 lg:gap-6">
-                <div className="absolute top-7 right-[10%] left-[10%] hidden h-px border-t-2 border-dashed border-gold/60 lg:block" aria-hidden="true"/>
-                {steps.map((step, i) => (
-                    <li key={step.title} className="relative flex gap-4 lg:flex-col lg:items-center lg:text-center">
-                        <div className="relative flex size-14 shrink-0 items-center justify-center rounded-2xl bg-panel text-panel-foreground shadow-md ring-4 ring-card">
-                            <step.icon className="size-6"/>
-                            <span className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-gold text-xs font-bold text-gold-foreground ring-2 ring-card">
-                                {i + 1}
-                            </span>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold">{step.title}</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">{step.text}</p>
-                        </div>
-                    </li>
-                ))}
-            </ol>
-        </div>
-    </section>
-)
+const AlurSection = ({withPayment})=>{
 
-const JadwalSection = ({jadwal, periods})=>(
-    <section id="jadwal" className="scroll-mt-20 py-20 sm:py-24">
-        {periods?.length > 0 && (
-            <div className="mx-auto mb-14 max-w-6xl px-4 sm:px-6 lg:px-8">
-                <SectionHeading eyebrow="Gelombang Pendaftaran" title="Daftar di gelombang yang sedang dibuka">
-                    Pendaftaran hanya bisa dilakukan selama gelombang untuk jenjangmu dibuka.
+    const steps = stepsFor(withPayment)
+
+    return (
+        <section id="alur" className="scroll-mt-20 border-y bg-card py-20 sm:py-24">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                <SectionHeading eyebrow="Alur Pendaftaran" title={`${stepCount[steps.length]} langkah menuju madrasah impian`} center>
+                    Semua langkah dilakukan secara online. Status pendaftaranmu selalu terlihat di dashboard.
                 </SectionHeading>
-                <div className="mt-8"><PeriodList periods={periods}/></div>
+
+                <ol className={cn("relative mt-14 grid gap-8 lg:gap-6", steps.length === 6 ? "lg:grid-cols-6" : "lg:grid-cols-5")}>
+                    <div className="absolute top-7 right-[10%] left-[10%] hidden h-px border-t-2 border-dashed border-gold/60 lg:block" aria-hidden="true"/>
+                    {steps.map((step, i) => (
+                        <li key={step.title} className="relative flex gap-4 lg:flex-col lg:items-center lg:text-center">
+                            <div className="relative flex size-14 shrink-0 items-center justify-center rounded-2xl bg-panel text-panel-foreground shadow-md ring-4 ring-card">
+                                <step.icon className="size-6"/>
+                                <span className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-gold text-xs font-bold text-gold-foreground ring-2 ring-card">
+                                    {i + 1}
+                                </span>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold">{step.title}</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">{step.text}</p>
+                            </div>
+                        </li>
+                    ))}
+                </ol>
             </div>
-        )}
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_1.3fr] lg:px-8">
-            <div>
-                <SectionHeading eyebrow="Jadwal" title="Catat tanggal pentingnya">
-                    Pastikan seluruh data sudah lengkap dan diajukan sebelum batas waktu. Jadwal dapat berubah
-                    sesuai kebijakan panitia.
-                </SectionHeading>
-                <Button asChild variant="outline" className="mt-6">
-                    <Link href="/help">Baca panduan lengkap <ArrowRightIcon/></Link>
-                </Button>
+        </section>
+    )
+}
+
+const JadwalSection = ({jadwal, periods, jenjangOptions})=>{
+
+    const {selected, setSelected, differs, timeline} = useJadwal(jadwal, jenjangOptions)
+
+    return (
+        <section id="jadwal" className="scroll-mt-20 py-20 sm:py-24">
+            {periods?.length > 0 && (
+                <div className="mx-auto mb-14 max-w-6xl px-4 sm:px-6 lg:px-8">
+                    <SectionHeading eyebrow="Gelombang Pendaftaran" title="Daftar di gelombang yang sedang dibuka">
+                        Pendaftaran hanya bisa dilakukan selama gelombang untuk jenjangmu dibuka.
+                    </SectionHeading>
+                    <div className="mt-8"><PeriodList periods={periods}/></div>
+                </div>
+            )}
+            <div className="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_1.3fr] lg:px-8">
+                <div>
+                    <SectionHeading eyebrow="Jadwal" title="Catat tanggal pentingnya">
+                        Pastikan seluruh data sudah lengkap dan diajukan sebelum batas waktu. Jadwal dapat berubah
+                        sesuai kebijakan panitia.
+                    </SectionHeading>
+                    {differs && (
+                        <div className="mt-6">
+                            <p className="mb-2 text-sm text-muted-foreground">Jadwal tiap jenjang berbeda. Pilih jenjang:</p>
+                            <JenjangSwitch options={jenjangOptions} value={selected} onChange={setSelected}/>
+                        </div>
+                    )}
+                    <Button asChild variant="outline" className="mt-6">
+                        <Link href="/help">Baca panduan lengkap <ArrowRightIcon/></Link>
+                    </Button>
+                </div>
+                <ol className="grid content-start gap-3">
+                    {jadwalItems.map((item, i) => (
+                        <li key={item.key} className="flex items-center gap-4 rounded-xl border bg-card p-4 shadow-xs">
+                            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+                                <item.icon className="size-5"/>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-semibold text-muted-foreground">Tahap {i + 1}</p>
+                                <p className="font-semibold">{item.title}</p>
+                            </div>
+                            <p className={cn("flex max-w-[45%] shrink-0 items-center gap-1.5 text-right text-sm font-medium",
+                                timeline[item.key] ? 'text-primary' : 'text-muted-foreground italic')}>
+                                <CalendarDaysIcon className="hidden size-4 shrink-0 sm:block"/>
+                                {timeline[item.key] || item.fallback || 'Menyusul'}
+                            </p>
+                        </li>
+                    ))}
+                </ol>
             </div>
-            <ol className="grid gap-3">
-                {jadwalItems.map((item, i) => (
-                    <li key={item.key} className="flex items-center gap-4 rounded-xl border bg-card p-4 shadow-xs">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
-                            <item.icon className="size-5"/>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="text-xs font-semibold text-muted-foreground">Tahap {i + 1}</p>
-                            <p className="font-semibold">{item.title}</p>
-                        </div>
-                        <p className={cn("flex shrink-0 items-center gap-1.5 text-right text-sm font-medium",
-                            jadwal?.[item.key] ? 'text-primary' : 'text-muted-foreground italic')}>
-                            <CalendarDaysIcon className="hidden size-4 sm:block"/>
-                            {jadwal?.[item.key] || 'Menyusul'}
-                        </p>
-                    </li>
-                ))}
-            </ol>
-        </div>
-    </section>
-)
+        </section>
+    )
+}
 
 const CtaSection = ()=>(
     <section className="pb-20 sm:pb-24">
@@ -320,8 +342,8 @@ const Welcome = ({jenjangOptions, jadwal, pendaftaran})=>(
         <Head title="Beranda"/>
         <Hero pendaftaran={pendaftaran}/>
         <JenjangSection jenjangOptions={jenjangOptions} pendaftaran={pendaftaran}/>
-        <AlurSection/>
-        <JadwalSection jadwal={jadwal} periods={pendaftaran?.periods}/>
+        <AlurSection withPayment={pendaftaran?.anyFee}/>
+        <JadwalSection jadwal={jadwal} periods={pendaftaran?.periods} jenjangOptions={jenjangOptions}/>
         <CtaSection/>
     </>
 )

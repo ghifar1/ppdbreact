@@ -73,7 +73,10 @@ const Index = ({periods, summary, jenjangOptions})=>{
                                         : <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-foreground">Semua jenjang</span>}
                                     <PeriodStatusBadge period={period}/>
                                 </div>
-                                <p className="mt-1 text-sm text-muted-foreground">{period.opens_label} – {period.closes_label}</p>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {period.opens_label} – {period.closes_label}
+                                    {period.fee_label && <> · Biaya <span className="font-medium text-foreground">{period.fee_label}</span></>}
+                                </p>
                                 {period.description && <p className="mt-1 text-sm whitespace-pre-line text-muted-foreground">{period.description}</p>}
                             </div>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -89,9 +92,9 @@ const Index = ({periods, summary, jenjangOptions})=>{
                                         onClick={() => setDialog({open: true, period})}><PencilIcon/></Button>
                                 <ConfirmDialog
                                     title={`Hapus ${period.name}?`}
-                                    description={period.users_count > 0
+                                    description={(period.users_count > 0
                                         ? `${period.users_count} siswa yang mendaftar di gelombang ini tetap terdaftar, tetapi tidak lagi tercatat di gelombang mana pun.`
-                                        : 'Gelombang ini akan dihapus.'}
+                                        : 'Gelombang ini akan dihapus.') + ' Jadwal ujian khusus gelombang ini ikut terhapus.'}
                                     confirmLabel="Hapus gelombang"
                                     destructive
                                     onConfirm={() => destroy(period)}

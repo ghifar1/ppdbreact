@@ -1,6 +1,16 @@
 import React from "react";
 import {Link} from "@inertiajs/react";
-import {CalendarRangeIcon, GlobeIcon, KeyRoundIcon, LayoutDashboardIcon, ListChecksIcon, UsersIcon} from "lucide-react";
+import {
+    BanknoteIcon,
+    CalendarDaysIcon,
+    CalendarRangeIcon,
+    GlobeIcon,
+    KeyRoundIcon,
+    LayoutDashboardIcon,
+    ListChecksIcon,
+    SlidersHorizontalIcon,
+    UsersIcon,
+} from "lucide-react";
 import AppLayout from "./AppLayout";
 
 const sections = [
@@ -9,12 +19,25 @@ const sections = [
         items: [{title: 'Dashboard', href: '/admin', icon: LayoutDashboardIcon, exact: true}],
     },
     {
-        title: 'Pengelolaan',
+        title: 'Pendaftar',
+        items: [
+            {title: 'Data Siswa', href: '/admin/siswa', icon: UsersIcon},
+            {title: 'Pembayaran', href: '/admin/pembayaran', icon: BanknoteIcon},
+        ],
+    },
+    {
+        title: 'Seleksi',
+        items: [
+            {title: 'Jadwal Ujian', href: '/admin/jadwal-ujian', icon: CalendarDaysIcon},
+            {title: 'Akun Ujian', href: '/admin/akun-ujian', icon: KeyRoundIcon},
+        ],
+    },
+    {
+        title: 'Pengaturan',
         items: [
             {title: 'Gelombang Pendaftaran', href: '/admin/gelombang', icon: CalendarRangeIcon},
+            {title: 'Pengaturan Seleksi', href: '/admin/pengaturan', icon: SlidersHorizontalIcon},
             {title: 'Menu & Formulir', href: '/admin/menu', icon: ListChecksIcon},
-            {title: 'Data Siswa', href: '/admin/siswa', icon: UsersIcon},
-            {title: 'Akun Ujian', href: '/admin/akun-ujian', icon: KeyRoundIcon},
         ],
     },
 ]

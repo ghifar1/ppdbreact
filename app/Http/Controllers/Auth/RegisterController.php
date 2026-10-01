@@ -38,7 +38,7 @@ class RegisterController extends Controller
      *
      * @return void
      */
-    public function __construct(private RegistrationSchedule $schedule)
+    public function __construct()
     {
         $this->middleware('guest');
     }
@@ -48,7 +48,7 @@ class RegisterController extends Controller
         return Inertia::render('Auth/Register', [
             'jenjangOptions' => Jenjang::options(),
             'jenjang' => Jenjang::tryFrom((string) request('jenjang'))?->value ?? '',
-            'pendaftaran' => $this->schedule->summary(),
+            'pendaftaran' => $this->schedule()->summary(),
         ]);
     }
 
@@ -63,7 +63,7 @@ class RegisterController extends Controller
             'jenjang' => ['required', Rule::enum(Jenjang::class), function (string $attribute, mixed $value, \Closure $fail) {
                 $jenjang = Jenjang::tryFrom((string) $value);
 
-                if ($jenjang && ! $this->schedule->for($jenjang)['open']) {
+                if ($jenjang && ! $this->schedule()->for($jenjang)['open']) {
                     $fail("Pendaftaran {$jenjang->label()} sedang ditutup.");
                 }
             }],
@@ -88,9 +88,18 @@ class RegisterController extends Controller
             'no_hp' => $data['no_hp'],
             'password' => $data['password'],
         ]);
-        $user->registration_period_id = $this->schedule->currentPeriod(Jenjang::from($data['jenjang']))?->id;
+        $user->registration_period_id = $this->schedule()->currentPeriod(Jenjang::from($data['jenjang']))?->id;
         $user->save();
 
         return $user;
+    }
+
+    /**
+     * Resolved per use: controller instances can outlive a request (they are
+     * cached on the route), while the schedule remembers the periods it read.
+     */
+    private function schedule(): RegistrationSchedule
+    {
+        return app(RegistrationSchedule::class);
     }
 }

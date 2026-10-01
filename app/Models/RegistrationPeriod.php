@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * A registration wave (gelombang pendaftaran). Students can only register
  * while a period for their jenjang is open; see RegistrationSchedule.
  */
-#[Fillable(['name', 'jenjang', 'opens_at', 'closes_at', 'description'])]
+#[Fillable(['name', 'jenjang', 'opens_at', 'closes_at', 'fee', 'description'])]
 class RegistrationPeriod extends Model
 {
     public const UPCOMING = 'upcoming';
@@ -33,6 +33,7 @@ class RegistrationPeriod extends Model
             'jenjang' => Jenjang::class,
             'opens_at' => 'datetime',
             'closes_at' => 'datetime',
+            'fee' => 'integer',
         ];
     }
 
@@ -99,6 +100,8 @@ class RegistrationPeriod extends Model
                 self::OPEN => 'Ditutup '.$until($this->closes_at).' lagi',
                 self::CLOSED => 'Ditutup '.$this->closes_at->diffForHumans($now),
             },
+            'fee' => $this->fee,
+            'fee_label' => $this->fee === 0 ? 'Gratis' : Payment::rupiah($this->fee),
             'description' => $this->description,
         ];
     }

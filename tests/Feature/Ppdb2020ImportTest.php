@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Enums\FieldType;
 use App\Enums\Jenjang;
+use App\Enums\PaymentStatus;
 use App\Models\FormAnswer;
 use App\Models\FormField;
 use App\Models\Menu;
+use App\Models\Payment;
 use App\Models\RegistrationPeriod;
 use App\Models\User;
 use Database\Seeders\MenuSeeder;
@@ -86,6 +88,11 @@ class Ppdb2020ImportTest extends TestCase
         $this->assertSame(Jenjang::MA, $user->jenjang);
         $this->assertSame('lulus', $user->status->value);
         $this->assertSame('MA-2024-007', $user->nomorPendaftaran());
+        $this->assertSame('007', $user->nomorPeserta());
+        $this->assertSame(2024, $user->exam_year);
+        // ppdb2020 only made accounts after the fee was checked.
+        $this->assertSame(PaymentStatus::Diterima, $user->payment->status);
+        $this->assertSame(Payment::METHOD_IMPORT, $user->payment->method);
         $this->assertSame('081234567890', $user->no_hp);
         $this->assertSame('2024-03-01', $user->created_at->toDateString());
         $this->assertNotNull($user->finalized_at);

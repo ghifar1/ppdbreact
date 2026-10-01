@@ -3,31 +3,38 @@ import {CheckIcon} from "lucide-react";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {cn} from "@/lib/utils";
 
-/** Index of the step the student is currently on. */
-function currentStep(status, dataLengkap)
+const submitted = ['menunggu_verifikasi', 'terverifikasi', 'lulus', 'tidak_lulus']
+const verified = ['terverifikasi', 'lulus', 'tidak_lulus']
+const finished = ['lulus', 'tidak_lulus']
+
+/** The admission steps, each marked done when the student has passed it. */
+function stepsFor(profil, dataLengkap, pembayaran)
 {
-    switch (status) {
-        case 'menunggu_verifikasi': return 2
-        case 'terverifikasi': return 3
-        case 'lulus':
-        case 'tidak_lulus': return 4
-        default: return dataLengkap ? 1 : 0
-    }
+    return [
+        ...(pembayaran ? [{
+            key: 'pembayaran', title: 'Pembayaran', done: pembayaran.status === 'diterima',
+            text: pembayaran.status === 'menunggu'
+                ? 'Bukti pembayaran sedang diperiksa panitia.'
+                : `Bayar biaya pendaftaran ${pembayaran.fee_label} dan unggah bukti transfer.`,
+        }] : []),
+        {key: 'pengisian', title: 'Pengisian data', text: 'Isi semua formulir di menu samping.',
+            done: dataLengkap || submitted.includes(profil.status)},
+        {key: 'finalisasi', title: 'Pengajuan finalisasi', text: 'Ajukan data untuk diperiksa panitia.',
+            done: submitted.includes(profil.status)},
+        {key: 'verifikasi', title: 'Verifikasi panitia', text: 'Panitia memeriksa kelengkapan dan keabsahan data.',
+            done: verified.includes(profil.status)},
+        {key: 'kartu', title: 'Unduh kartu ujian', text: 'Cetak kartu peserta untuk mengikuti seleksi.',
+            done: finished.includes(profil.status)},
+        {key: 'seleksi', title: 'Ujian & hasil seleksi', text: 'Ikuti ujian, lalu lihat pengumuman hasil seleksi di dashboard.',
+            done: finished.includes(profil.status)},
+    ]
 }
 
-const steps = [
-    {key: 'pengisian', title: 'Pengisian data', text: 'Isi semua formulir di menu samping.'},
-    {key: 'finalisasi', title: 'Pengajuan finalisasi', text: 'Ajukan data untuk diperiksa panitia.'},
-    {key: 'verifikasi', title: 'Verifikasi panitia', text: 'Panitia memeriksa kelengkapan dan keabsahan data.'},
-    {key: 'kartu', title: 'Unduh kartu ujian', text: 'Cetak kartu peserta untuk mengikuti seleksi.'},
-    {key: 'seleksi', title: 'Hasil seleksi', text: 'Pengumuman hasil seleksi di dashboard.'},
-]
+/** Timeline of the admission steps with the dates set under Pengaturan Seleksi. */
+export const ProgressUser = ({profil, dataLengkap, pembayaran, jadwal})=>{
 
-/** Timeline of the admission steps with the schedule from config/ppdb.php. */
-export const ProgressUser = ({profil, dataLengkap, jadwal})=>{
-
-    const current = currentStep(profil.status, dataLengkap)
-    const finished = ['lulus', 'tidak_lulus'].includes(profil.status)
+    const steps = stepsFor(profil, dataLengkap, pembayaran)
+    const current = steps.findIndex(step => !step.done)
 
     return (
         <Card>
@@ -38,7 +45,7 @@ export const ProgressUser = ({profil, dataLengkap, jadwal})=>{
             <CardContent>
                 <ol className="relative">
                     {steps.map((step, i) => {
-                        const state = i < current || (finished && i === current) ? 'done' : i === current ? 'current' : 'upcoming'
+                        const state = step.done ? 'done' : i === current ? 'current' : 'upcoming'
 
                         return (
                             <li key={step.key} className="relative flex gap-4 pb-7 last:pb-0">

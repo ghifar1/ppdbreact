@@ -29,6 +29,24 @@ class FormService
     }
 
     /**
+     * Answers of keyed fields (see FormField::$key), per user: [user_id => [key => value]].
+     *
+     * @param  Collection<int, User>  $users
+     * @param  list<string>  $keys
+     * @return Collection<int, array<string, string>>
+     */
+    public function keyedAnswers(Collection $users, array $keys): Collection
+    {
+        return FormAnswer::query()
+            ->join('form_fields', 'form_fields.id', '=', 'form_answers.form_field_id')
+            ->whereIn('form_answers.user_id', $users->pluck('id'))
+            ->whereIn('form_fields.key', $keys)
+            ->get(['form_answers.user_id', 'form_fields.key', 'form_answers.value'])
+            ->groupBy('user_id')
+            ->map(fn (Collection $rows) => $rows->pluck('value', 'key')->map(fn ($value) => (string) $value)->all());
+    }
+
+    /**
      * The student's answers keyed by field id.
      *
      * @return Collection<int, FormAnswer>
